@@ -1,0 +1,47 @@
+AllCops:
+  TargetRubyVersion: 2.2
+
+Rails:
+  Enabled: true
+
+Metrics/LineLength:
+  Max: 100
+Metrics/MethodLength:
+  Max: 20
+Metrics/ClassLength:
+  Max: 200
+Metrics/AbcSize:
+  Max: 25
+
+Documentation:
+  Enabled: false
+
+Lint/UselessAccessModifier:
+  Enabled: false
+
+Style/Encoding:
+  Enabled: true
+Style/MultilineTernaryOperator:
+  Enabled: false
+Style/Encoding:
+  Enabled: false
+Style/AlignParameters:
+  Enabled: false
+Style/ClassAndModuleChildren:
+  Enabled: false
+Style/StringLiterals:
+  Enabled: false
+
+Style/DotPosition:
+  EnforcedStyle: trailing
+Style/MultilineMethodCallIndentation:
+  Enabled: false
+
+# Rails
+Rails/HasAndBelongsToMany:
+  Enabled: false
+
+
+# Allow safe assignment in conditions.
+Style/ParenthesesAroundCondition:
+  AllowSafeAssignment: true
