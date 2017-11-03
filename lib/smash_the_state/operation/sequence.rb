@@ -47,9 +47,7 @@ module SmashTheState
             # no-op
             state
           else
-            state.tap do
-              middleware_class(state).send(step_name, state)
-            end
+            middleware_class(state).send(step_name, state)
           end
         end
 
