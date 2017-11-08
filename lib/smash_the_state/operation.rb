@@ -1,12 +1,18 @@
 require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
+require_relative 'operation/swagger'
 require_relative 'operation/state'
 
 module SmashTheState
   class Operation
     class << self
       attr_reader :state_class
+
+      delegate :eval_swagger_params,
+               :override_swagger_param,
+               :override_swagger_params,
+               to: :state_class
 
       def call(params = {})
         state = state_class.new(params)
