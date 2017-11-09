@@ -19,11 +19,11 @@ describe SmashTheState::Operation::Swagger do
   let!(:context) { double(parameter: parameter) }
 
   let!(:first_name_attribute) do
-    klass.attributes_registry[:first_name].last[:swagger_attribute]
+    klass.swagger_attributes[:first_name]
   end
 
   let!(:last_name_attribute) do
-    klass.attributes_registry[:last_name].last[:swagger_attribute]
+    klass.swagger_attributes[:last_name]
   end
 
   describe "self#eval_swagger_params" do
