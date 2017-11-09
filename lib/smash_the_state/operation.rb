@@ -53,6 +53,12 @@ module SmashTheState
         end
       end
 
+      def represent(representer)
+        step :represent do |state|
+          representer.new(state)
+        end
+      end
+
       private
 
       def sequence

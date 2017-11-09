@@ -13,6 +13,8 @@ module SmashTheState
       end
 
       class << self
+        attr_accessor :representer
+
         def build(&block)
           Class.new(self).tap do |k|
             k.class_eval(&block)

@@ -147,4 +147,29 @@ describe SmashTheState::Operation do
       expect(state.errors[:name]).to include("no gods")
     end
   end
+
+  describe "#represent" do
+    let!(:representer) do
+      Class.new.tap do |k|
+        k.class_eval do
+          attr_reader :state
+
+          def initialize(state)
+            @state = state
+          end
+        end
+      end
+    end
+
+    before do
+      klass.represent representer
+    end
+
+    it "adds a representer step, which returns a representer initialized " \
+       "with the state" do
+      represented = klass.call(name: "zeus")
+      expect(represented).to be_a(representer)
+      expect(represented.state.name).to eq("zeus")
+    end
+  end
 end
