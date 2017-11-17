@@ -210,10 +210,10 @@ end
 [Pundit](https://github.com/elabs/pundit) style policies are supported via a `policy` method. Failing policies raise a `SmashTheState::Operation::NotAuthorized` exception and run at the position in the sequence in which they are defined. Pass `current_user` into your operation alongside your params.
 
 ``` ruby
-class UserPolicy
-  def initialize(current_user, user)
+class DatabasePolicy
+  def initialize(current_user, database)
     @current_user = current_user
-    @user = user
+    @database = database
   end
 
   def allowed?
@@ -221,20 +221,26 @@ class UserPolicy
   end
 end
 
-class CreateUserOperation < SmashTheState::Operation
+class CreateDatabaseOperation < SmashTheState::Operation
   schema do
+    attribute :type, :string
     # ...
   end
 
-  # state is passed into UserPolicy as "user" and current_user is passed in as
-  # "current_user"
-  policy UserPolicy, :allowed?
+  step :get_database do |state|
+    Database.find_by_type(type: state.type)
+  end
+
+  # state is now a database and is passed into DatabasePolicy as "database",
+  # while current_user is passed in as "current_user"
+  policy DatabasePolicy, :allowed?
 end
 ```
 
 ```ruby
-CreateUserOperation.call(
-  current_user: some_user
+CreateDatabaseOperation.call(
+  current_user: some_user,
+  type: "WhiskeyDB"
   # ... and so on
 )
 ```
