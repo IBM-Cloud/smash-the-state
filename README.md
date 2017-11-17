@@ -204,3 +204,37 @@ class DatabaseController < AbstractController
   end
 end
 ```
+
+## Policy
+
+[Pundit](https://github.com/elabs/pundit) style policies are supported via a `policy` method. Failing policies raise a `SmashTheState::Operation::NotAuthorized` exception and run at the position in the sequence in which they are defined. Pass `current_user` into your operation alongside your params.
+
+``` ruby
+class UserPolicy
+  def initialize(current_user, user)
+    @current_user = current_user
+    @user = user
+  end
+
+  def allowed?
+    @current_user.age > 21
+  end
+end
+
+class CreateUserOperation < SmashTheState::Operation
+  schema do
+    # ...
+  end
+
+  # state is passed into UserPolicy as "user" and current_user is passed in as
+  # "current_user"
+  policy UserPolicy, :allowed?
+end
+```
+
+```ruby
+CreateUserOperation.call(
+  current_user: some_user
+  # ... and so on
+)
+```

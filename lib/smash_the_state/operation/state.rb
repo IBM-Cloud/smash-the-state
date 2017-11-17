@@ -52,6 +52,14 @@ module SmashTheState
         end
       end
 
+      attr_accessor :current_user
+
+      def initialize(attributes = {})
+        @current_user = attributes.delete(:current_user) ||
+                        attributes.delete("current_user")
+        super(attributes)
+      end
+
       def as_json
         Hash[self.class.attributes_registry.keys.map do |key|
           [key, send(key)]

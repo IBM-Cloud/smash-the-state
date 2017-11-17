@@ -86,6 +86,51 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "self#policy" do
+    let!(:current_user) { Struct.new(:age).new(64) }
+
+    before do
+      policy_klass = Class.new.tap do |k|
+        k.class_eval do
+          def initialize(user, state)
+            @user  = user
+            @state = state
+          end
+
+          def allowed?
+            @user.age > 21
+          end
+        end
+      end
+
+      klass.class_eval do
+        policy policy_klass, :allowed?
+
+        step :was_allowed do |_state|
+          :allowed
+        end
+      end
+    end
+
+    context "when the policy permits" do
+      it "newifies the policy class with the state, runs the method" do
+        expect(klass.call(current_user: current_user)).to eq(:allowed)
+      end
+    end
+
+    context "when the policy forbids" do
+      before do
+        current_user.age = 3
+      end
+
+      it "newifies the policy class with the state, runs the method" do
+        expect do
+          klass.call(current_user: current_user)
+        end .to raise_error(SmashTheState::Operation::NotAuthorized)
+      end
+    end
+  end
+
   describe "self#middleware_class" do
     let!(:sequence) { klass.send(:sequence) }
 

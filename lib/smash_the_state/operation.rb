@@ -14,6 +14,8 @@ module SmashTheState
                :override_swagger_params,
                to: :state_class
 
+      # Runs the operation, creating the state based on the provided params,
+      # passing it from step to step and returning the last step.
       def call(params = {})
         state = state_class.new(params)
         sequence.call(state)
@@ -30,6 +32,13 @@ module SmashTheState
       def error(*steps, &block)
         steps.each do |step_name|
           sequence.add_error_handler_for_step(step_name, &block)
+        end
+      end
+
+      def policy(klass, method_name)
+        step :policy do |state|
+          klass.new(state.current_user, state).send(method_name) ||
+            raise(NotAuthorized, state)
         end
       end
 

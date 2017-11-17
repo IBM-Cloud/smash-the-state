@@ -7,5 +7,7 @@ module SmashTheState
         @state = state
       end
     end
+
+    class NotAuthorized < Error; end
   end
 end
