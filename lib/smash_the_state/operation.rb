@@ -36,9 +36,15 @@ module SmashTheState
       end
 
       def policy(klass, method_name)
-        step :policy do |state|
-          klass.new(state.current_user, state).send(method_name) ||
-            raise(NotAuthorized, state)
+        step :policy do |state, original_state|
+          state.tap do
+            policy_instance = klass.new(original_state.current_user, state)
+
+            # pass the policy instance back in the NotAuthorized exception so
+            # that the state, the user, and the policy can be inspected
+            policy_instance.send(method_name) ||
+              raise(NotAuthorized, policy_instance)
+          end
         end
       end
 

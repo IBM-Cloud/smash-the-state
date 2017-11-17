@@ -8,6 +8,12 @@ module SmashTheState
       end
     end
 
-    class NotAuthorized < Error; end
+    class NotAuthorized < StandardError
+      attr_reader :policy_instance
+
+      def initialize(policy_instance)
+        @policy_instance = policy_instance
+      end
+    end
   end
 end

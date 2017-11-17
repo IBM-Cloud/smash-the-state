@@ -63,6 +63,37 @@ end
 
 # Advanced stuff
 
+## Original state
+
+If the state changes from step-to-step, don't I lose track of my original state? What if I change my state to something else but I need to access the original operation input data?
+
+Each step not only receives the state of the previous step, but also a copy of the original, unmolested state object that was formed from the union of the input params and the schema. To access the original state data, access it as the second argument in your step block.
+
+```ruby
+class CreateAnalyticsOperation < SmashTheState::Operation
+  schema do
+    attribute :action, :string
+    attribute :request_ip, :string
+    attribute :private_note, :string
+  end
+
+  step :create_analytics do |state|
+    Analytics.create(action: state.action, request_ip: state.request_ip)
+  end
+
+  step :send_private_note do |state, original_state|
+    # so state is an Analytics instance here. what if we want the original
+    # state? 'state' is no longer our schema-generated state object, but that
+    # data is available as 'original_state'. we can send our private note while
+    # still forwarding along the analytics state to the next step
+    PrivateNote.create(body: original_state.private_note)
+
+    # pass the Analytics state down to the next step
+    state
+  end
+end
+```
+
 ## Middleware
 
 You can define middleware classes to which the operation can delegate steps. The middleware class names can be arbitrarily composed by information pulled from the state.

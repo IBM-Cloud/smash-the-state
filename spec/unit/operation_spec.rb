@@ -59,6 +59,29 @@ describe SmashTheState::Operation do
       expect(state.name).to eq("Emma Goldman")
       expect(state.age).to eq(148)
     end
+
+    describe "original state" do
+      before do
+        klass.step :change_state_to_something_else do |_state|
+          :something_else
+        end
+
+        klass.step :change_state_to_something_else do |state, original_state|
+          # state should be changed by the previous step
+          raise "should not hit this" unless state == :something_else
+          # and switch the state back to the original state, which should be
+          # available via the second argument to the block
+          original_state
+        end
+      end
+
+      it "is always available in each step as the second argument passed " \
+         "into the step block" do
+        state = klass.call(age: 148)
+        expect(state.name).to eq(nil)
+        expect(state.age).to eq(148)
+      end
+    end
   end
 
   describe "self#error" do
@@ -92,6 +115,8 @@ describe SmashTheState::Operation do
     before do
       policy_klass = Class.new.tap do |k|
         k.class_eval do
+          attr_reader :user, :state
+
           def initialize(user, state)
             @user  = user
             @state = state
@@ -106,15 +131,21 @@ describe SmashTheState::Operation do
       klass.class_eval do
         policy policy_klass, :allowed?
 
-        step :was_allowed do |_state|
-          :allowed
+        # we should receive the state from the policy test
+        step :was_allowed do |state|
+          state.tap do
+            state.name = "allowed"
+          end
         end
       end
+
+      @policy_klass = policy_klass
     end
 
     context "when the policy permits" do
       it "newifies the policy class with the state, runs the method" do
-        expect(klass.call(current_user: current_user)).to eq(:allowed)
+        state = klass.call(current_user: current_user)
+        expect(state.name).to eq("allowed")
       end
     end
 
@@ -123,10 +154,14 @@ describe SmashTheState::Operation do
         current_user.age = 3
       end
 
-      it "newifies the policy class with the state, runs the method" do
-        expect do
+      it "raises an exception, embeds the policy instance" do
+        begin
           klass.call(current_user: current_user)
-        end .to raise_error(SmashTheState::Operation::NotAuthorized)
+          raise "should not hit this"
+        rescue SmashTheState::Operation::NotAuthorized => e
+          expect(e.policy_instance).to be_a(@policy_klass)
+          expect(e.policy_instance.user).to eq(current_user)
+        end
       end
     end
   end
