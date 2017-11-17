@@ -242,6 +242,8 @@ end
 
 ``` ruby
 class DatabasePolicy
+  attr_reader :current_user, :database
+
   def initialize(current_user, database)
     @current_user = current_user
     @database = database
@@ -274,4 +276,19 @@ CreateDatabaseOperation.call(
   type: "WhiskeyDB"
   # ... and so on
 )
+```
+
+The `NotAuthorized` exception will also provide the failing policy instance via a `policy_instance` method so that you can reason about what exactly went wrong.
+
+```ruby
+begin
+  CreateDatabaseOperation.call(
+    current_user: some_user,
+    type: "WhiskeyDB"
+    # ... and so on
+  )
+rescue SmashTheState::Operation::NotAuthorized => e
+  e.policy_instance.current_user == some_user # true
+  e.policy_instance.database.is_a? Database   # also true
+end
 ```
