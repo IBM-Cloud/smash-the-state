@@ -1,3 +1,5 @@
+[![Build Status](https://travis.ibm.com/compose/smash_the_state.svg?token=jqswnXsg6LbeRHSEXA1p&branch=master)](https://travis.ibm.com/compose/smash_the_state)
+
 # Smash the State
 A useful utility for transforming state that provides step sequencing, middleware, and validation.
 
