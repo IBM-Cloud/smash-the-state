@@ -6,3 +6,10 @@ rvm:
 script:
   - bundle exec rubocop
   - bundle exec rspec
+
+deploy:
+  provider: script
+  script: ./publish.sh
+  skip_cleanup: true
+  on:
+    branch: master
