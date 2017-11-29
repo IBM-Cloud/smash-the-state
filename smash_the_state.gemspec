@@ -13,6 +13,11 @@ Gem::Specification.new do |s|
   s.description = ""
   s.license     = "MIT"
 
+  s.files = Dir["{lib}/**/*",
+                "spec/unit/**/*",
+                "Rakefile",
+                "README.md"]
+
   # Prevent pushing this gem to RubyGems.org by setting 'allowed_push_host', or
   # delete this section to allow pushing this gem to any host.
   if s.respond_to?(:metadata)
