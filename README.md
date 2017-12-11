@@ -294,3 +294,17 @@ rescue SmashTheState::Operation::NotAuthorized => e
   e.policy_instance.database.is_a? Database   # also true
 end
 ```
+
+## Continuation
+
+Smash the State operations are functional, so they don't support inheritance. In lieu of inheritance, you may use `continues_from`, which frontloads an existing operation in front of the operation being defined. It feeds the state result of the first operation into the first step of the second.
+
+``` ruby
+class SecondOperation < SmashTheState::Operation
+  continues_from FirstOperation
+
+  step :another_step do |state|
+    # ... continue to smash the state
+  end
+end
+```
