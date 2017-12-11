@@ -21,6 +21,13 @@ module SmashTheState
         sequence.call(state)
       end
 
+      # inheritance doesn't work with class attr_readers, this method is provided to
+      # bootstrap an operation as a continuation of a "prelude" operation
+      def continues_from(prelude)
+        @state_class = prelude.state_class.dup
+        @sequence = prelude.sequence.dup
+      end
+
       def schema(&block)
         @state_class = Operation::State.build(&block)
       end
@@ -74,11 +81,11 @@ module SmashTheState
         end
       end
 
-      private
-
       def sequence
         @sequence ||= Operation::Sequence.new
       end
+
+      private
 
       def error!(state)
         raise Error, state

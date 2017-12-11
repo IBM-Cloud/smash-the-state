@@ -252,4 +252,39 @@ describe SmashTheState::Operation do
       expect(represented.state.name).to eq("zeus")
     end
   end
+
+  describe "#continues_from" do
+    let!(:continuing_operation) do
+      Class.new(SmashTheState::Operation).tap do |k1|
+        k1.class_eval do
+          prelude_klass = Class.new(SmashTheState::Operation).tap do |k2|
+            k2.class_eval do
+              schema do
+                attribute :name, :string
+                attribute :age, :integer
+              end
+
+              step :prelude_step do |state|
+                state.name = "Peter"
+                state
+              end
+            end
+          end
+
+          continues_from prelude_klass
+
+          step :extra_step do |state|
+            state.age = 166
+            state
+          end
+        end
+      end
+    end
+
+    it "continues from the prelude operation" do
+      result = continuing_operation.call({})
+      expect(result.name).to eq("Peter")
+      expect(result.age).to eq(166)
+    end
+  end
 end
