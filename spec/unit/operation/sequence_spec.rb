@@ -52,9 +52,9 @@ describe SmashTheState::Operation::Sequence do
     context "with an Error exception" do
       before do
         instance.instance_eval do |i|
-          i.add_step(:one) do |state|
-            state << :error
-            raise SmashTheState::Operation::Error, state
+          i.add_step(:one) do |_state|
+            # test that we can pass a different state to the error handler
+            raise SmashTheState::Operation::Error, :custom_state
           end
         end
 
@@ -65,13 +65,13 @@ describe SmashTheState::Operation::Sequence do
 
       context "with an error handler" do
         before do
-          instance.add_error_handler_for_step :one do |state|
-            state << :handled
+          instance.add_error_handler_for_step :one do |custom_state, original_state|
+            [custom_state, original_state]
           end
         end
 
         it "runs the error handler" do
-          expect(instance.call([])).to eq([:error, :handled])
+          expect(instance.call([])).to eq([:custom_state, []])
         end
       end
 

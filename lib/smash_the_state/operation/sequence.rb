@@ -26,7 +26,7 @@ module SmashTheState
         e.state
       rescue Operation::Error => e
         raise e if current_step.error_handler.nil?
-        current_step.error_handler.call(state)
+        current_step.error_handler.call(e.state, original_state)
       end
 
       def add_step(step_name, &block)
