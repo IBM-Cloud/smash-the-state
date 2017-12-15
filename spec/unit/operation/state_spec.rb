@@ -17,6 +17,29 @@ describe SmashTheState::Operation::State do
     end
   end
 
+  describe "self#schema" do
+    let!(:built) do
+      subject.build do
+        schema :bread do
+          attribute :loaves, :integer
+
+          schema :butter do
+            attribute :salted, :boolean
+          end
+        end
+      end
+    end
+
+    let!(:instance) do
+      built.new(bread: { loaves: 3, butter: { salted: true } })
+    end
+
+    it "allows for nesting of schemas" do
+      expect(instance.bread.loaves).to eq(3)
+      expect(instance.bread.butter.salted).to eq(true)
+    end
+  end
+
   describe "self#eval_validation_directives_block" do
     let!(:built) do
       subject.build do

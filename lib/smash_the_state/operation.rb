@@ -3,6 +3,7 @@ require_relative 'operation/sequence'
 require_relative 'operation/step'
 require_relative 'operation/swagger'
 require_relative 'operation/state'
+require_relative 'operation/state_type'
 
 module SmashTheState
   class Operation

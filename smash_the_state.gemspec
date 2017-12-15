@@ -27,4 +27,5 @@ Gem::Specification.new do |s|
   end
 
   s.add_dependency "active_model_attributes", "~> 1.2.0"
+  s.add_dependency "activesupport", ">= 3.0.0"
 end
