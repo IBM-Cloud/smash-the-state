@@ -308,3 +308,36 @@ class SecondOperation < SmashTheState::Operation
   end
 end
 ```
+
+## Nested State Schemas
+
+While it's best to keep things simple, sometimes things are complex. As such, you may nest state schemas like so:
+
+```ruby
+class Database::Create < Compose::Operation
+  schema do
+    attribute :type, :string
+
+    schema :host do
+      attribute :name, :string
+
+      schema :resources do
+        attribute :ram_units, :integer
+        attribute :cpu_units, :integer
+      end
+
+      # nest as many layers deep as you like
+    end
+  end
+
+  step :allocate_cpu do |state|
+    # access the nested state for whatever you need...
+    host = Host.new(state.host.name)
+    host.cpus = CPU.new(state.host.resources.cpu_units)
+
+    host
+  end
+end
+```
+
+Calling `as_json` on a state will recurse through the nesting to produce a nested hash.
