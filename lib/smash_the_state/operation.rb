@@ -26,7 +26,7 @@ module SmashTheState
       # bootstrap an operation as a continuation of a "prelude" operation
       def continues_from(prelude)
         @state_class = prelude.state_class.dup
-        @sequence = prelude.sequence.dup
+        sequence.steps.concat prelude.sequence.steps
       end
 
       def schema(&block)
