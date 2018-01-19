@@ -4,7 +4,7 @@ module SmashTheState
       class Attribute
         class BadType < StandardError; end
 
-        SWAGGER_KEYS = [:name, :in, :description, :required, :type, :format].freeze
+        SWAGGER_KEYS = [:name, :in, :description, :required, :type, :format, :ref].freeze
 
         attr_accessor(*SWAGGER_KEYS)
         attr_accessor :override_blocks
@@ -16,26 +16,43 @@ module SmashTheState
           @required    = options[:required].present?
           @in          = symbolize(options[:in] || :body)
           @format      = symbolize(options[:format])
+          @ref         = options[:ref]
 
           coerce_active_model_types_to_swagger_types
 
           @override_blocks = []
         end
 
+        def mode
+          return :primitive if ref.nil?
+          :reference
+        end
+
         def evaluate_to_parameter_block(context)
+          evaluate_to_block(:parameter, context)
+        end
+
+        def evaluate_to_block(method_name, context)
           attribute = self
           override_blocks = attribute.override_blocks
 
           context.instance_eval do
-            parameter do
-              SWAGGER_KEYS.each do |k|
-                key k, attribute.send(k)
+            send(method_name, attribute.name) do
+              case attribute.mode
+              when :primitive then
+                key :type, attribute.type
+                key :format, attribute.format
+              when :reference then
+                schema do
+                  key :'$ref', attribute.ref
+                end
               end
 
+              (SWAGGER_KEYS - [:type, :ref, :format]).
+                each { |k| key k, attribute.send(k) }
+
               if override_blocks
-                override_blocks.each do |override_block|
-                  instance_eval(&override_block)
-                end
+                override_blocks.each { |block| instance_eval(&block) }
               end
             end
           end

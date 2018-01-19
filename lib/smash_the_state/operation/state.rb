@@ -23,8 +23,8 @@ module SmashTheState
           end
         end
 
-        def schema(key, &block)
-          attribute key, :state_for_smashing, schema: block
+        def schema(key, options = {}, &block)
+          attribute key, :state_for_smashing, options.merge(schema: block)
         end
 
         # for ActiveModel states we will treat the block as a collection of ActiveModel

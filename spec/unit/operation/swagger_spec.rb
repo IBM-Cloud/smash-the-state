@@ -16,7 +16,8 @@ describe SmashTheState::Operation::Swagger do
   end
 
   let!(:parameter) { double }
-  let!(:context) { double(parameter: parameter) }
+  let!(:swagger_operation) { double(parameter: parameter) }
+  let!(:swagger_context) { double }
 
   let!(:first_name_attribute) do
     klass.attribute_set.swagger_attributes[:first_name]
@@ -26,18 +27,18 @@ describe SmashTheState::Operation::Swagger do
     klass.attribute_set.swagger_attributes[:last_name]
   end
 
-  describe "self#eval_swagger_params" do
+  describe "self#eval_swagger" do
     it "runs evaluate_to_parameter_block with the swagger context for each " \
        "attribute" do
       expect(
         first_name_attribute
-      ).to receive(:evaluate_to_parameter_block).with(context)
+      ).to receive(:evaluate_to_parameter_block).with(swagger_operation)
 
       expect(
         last_name_attribute
-      ).to receive(:evaluate_to_parameter_block).with(context)
+      ).to receive(:evaluate_to_parameter_block).with(swagger_operation)
 
-      klass.eval_swagger_params(context)
+      klass.eval_swagger(swagger_operation, swagger_context)
     end
   end
 
