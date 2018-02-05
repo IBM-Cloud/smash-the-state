@@ -16,6 +16,8 @@ module SmashTheState
         end
 
         class << self
+          attr_reader :schema_block
+
           def definition(definition_name)
             @definition_name = definition_name
           end
@@ -29,6 +31,7 @@ module SmashTheState
           alias to_s ref
 
           def schema(&block)
+            @schema_block = block
             class_eval(&block)
           end
 

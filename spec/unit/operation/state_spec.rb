@@ -18,25 +18,55 @@ describe SmashTheState::Operation::State do
   end
 
   describe "self#schema" do
+    jam_definition = Class.new(SmashTheState::Operation::Swagger::Definition).tap do |k|
+      k.class_eval do
+        definition "Jam"
+
+        schema do
+          attribute :sweetened, :boolean
+        end
+      end
+    end
+
     let!(:built) do
       subject.build do
+        extend SmashTheState::Operation::Swagger
+
         schema :bread do
           attribute :loaves, :integer
 
+          # inline
           schema :butter do
             attribute :salted, :boolean
           end
+
+          # by reference
+          schema :jam, ref: jam_definition
         end
       end
     end
 
     let!(:instance) do
-      built.new(bread: { loaves: 3, butter: { salted: true } })
+      built.new(
+        bread: {
+          loaves: 3,
+          butter: {
+            salted: true
+          },
+          jam: {
+            sweetened: false
+          }
+        }
+      )
     end
 
-    it "allows for nesting of schemas" do
+    it "allows for inline nesting of schemas" do
       expect(instance.bread.loaves).to eq(3)
       expect(instance.bread.butter.salted).to eq(true)
+    end
+
+    it "allows for reference of type definitions" do
+      expect(instance.bread.jam.sweetened).to eq(false)
     end
   end
 

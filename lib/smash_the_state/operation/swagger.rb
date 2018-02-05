@@ -7,7 +7,7 @@ module SmashTheState
   class Operation
     module Swagger
       # see http://api.rubyonrails.org/classes/ActiveRecord/Attributes/ClassMethods.html#method-i-attribute
-      ACTIVE_MODEL_ATTRIBUTE_OPTIONS = [:default, :array, :range].freeze
+      ACTIVE_MODEL_ATTRIBUTE_OPTIONS = [:default, :array, :range, :schema].freeze
 
       # delegating most of the behavior out of the core Smash schema to avoid polluting it
       # unnecessarily and also to allow for other abstractions with other libraries
