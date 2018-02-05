@@ -1,9 +1,7 @@
 module SmashTheState
   class Operation
     module Swagger
-      class Definition < SmashTheState::Operation::State
-        extend SmashTheState::Operation::Swagger
-
+      module Definition
         # create an AttributeSet that uses properties instead of attributes
         class AttributeSet < SmashTheState::Operation::Swagger::AttributeSet
           def add_attribute(name, type, options = {})
@@ -15,26 +13,15 @@ module SmashTheState
           end
         end
 
-        class << self
-          attr_reader :schema_block
-
-          def definition(definition_name)
-            @definition_name = definition_name
+        def self.extended(base)
+          base.instance_eval do
+            extend SmashTheState::Operation::Swagger
+            extend ClassMethods
+            attr_reader :schema_block
           end
+        end
 
-          def ref
-            @definition_name
-          end
-
-          # swagger-blocks will to_s this class name into things like:
-          # "#/definitions/#{definition_class.to_s}"
-          alias to_s ref
-
-          def schema(&block)
-            @schema_block = block
-            class_eval(&block)
-          end
-
+        module ClassMethods
           def eval_to_swagger_block(swagger_context)
             definition = self
             swagger_context.send(:swagger_schema, ref) do

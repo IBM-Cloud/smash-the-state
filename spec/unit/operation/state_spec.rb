@@ -18,7 +18,7 @@ describe SmashTheState::Operation::State do
   end
 
   describe "self#schema" do
-    jam_definition = Class.new(SmashTheState::Operation::Swagger::Definition).tap do |k|
+    jam_definition = Class.new(SmashTheState::Operation::Definition).tap do |k|
       k.class_eval do
         definition "Jam"
 
