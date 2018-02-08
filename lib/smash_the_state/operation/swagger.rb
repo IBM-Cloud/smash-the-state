@@ -20,6 +20,12 @@ module SmashTheState
       # logic
       attr_reader :attribute_set
 
+      def self.extended(base)
+        base.instance_eval do
+          @attribute_set = SmashTheState::Operation::Swagger::AttributeSet.new
+        end
+      end
+
       private
 
       # the standard strategy for defining swagger-blocks is with attributes. in the case
@@ -46,8 +52,6 @@ module SmashTheState
           end
         )
 
-        # swaggerize the attribute with a Swagger::AttributeSet
-        @attribute_set ||= attribute_set_class.new
         @attribute_set.send("add_#{attribute_strategy}", name, type, options)
 
         return if options[:ref].nil?

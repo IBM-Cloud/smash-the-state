@@ -9,6 +9,8 @@ module SmashTheState
             extend SmashTheState::Operation::Swagger
             extend ClassMethods
             attr_reader :schema_block
+
+            @attribute_set = SmashTheState::Operation::Swagger::Definition::AttributeSet.new
           end
         end
 
@@ -26,10 +28,6 @@ module SmashTheState
 
           def attribute_strategy
             :property
-          end
-
-          def attribute_set_class
-            SmashTheState::Operation::Swagger::Definition::AttributeSet
           end
         end
       end
