@@ -1,18 +1,9 @@
+require_relative 'definition/attribute_set'
+
 module SmashTheState
   class Operation
     module Swagger
       module Definition
-        # create an AttributeSet that uses properties instead of attributes
-        class AttributeSet < SmashTheState::Operation::Swagger::AttributeSet
-          def add_attribute(name, type, options = {})
-            swagger_attributes[name] = Property.new(name, type, options)
-          end
-
-          def eval_swagger_param(attribute, swagger_context)
-            attribute.evaluate_to_property_block(swagger_context)
-          end
-        end
-
         def self.extended(base)
           base.instance_eval do
             extend SmashTheState::Operation::Swagger
@@ -24,6 +15,8 @@ module SmashTheState
         module ClassMethods
           def eval_to_swagger_block(swagger_context)
             definition = self
+
+            # see https://github.com/fotinakis/swagger-blocks/blob/4a5d33939e49f4417f1fc52896a3c30b69a5b27c/lib/swagger/blocks/class_methods.rb#L35
             swagger_context.send(:swagger_schema, ref) do
               definition.eval_swagger(self, nil)
             end
