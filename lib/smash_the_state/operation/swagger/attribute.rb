@@ -24,7 +24,11 @@ module SmashTheState
         end
 
         def mode
+          # a primitive attribute is an attribute with a simple type (string, etc) that is
+          # defined inline
           return :primitive if ref.nil?
+
+          # a reference will pull in a Definition
           :reference
         end
 
@@ -32,6 +36,8 @@ module SmashTheState
           evaluate_to_block(:parameter, context)
         end
 
+        # provides a somewhat DRY interface for evaluating various types of swagger blocks
+        # in a given context
         def evaluate_to_block(method_name, context)
           attribute = self
           override_blocks = attribute.override_blocks

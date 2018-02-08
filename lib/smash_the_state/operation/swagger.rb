@@ -15,21 +15,29 @@ module SmashTheState
                :override_swagger_param,
                :override_swagger_params, to: :attribute_set
 
+      # an attribute set is a collection of swagger attributes and is a place to keep the
+      # swagger-specific behaviors so that it is kept out of the way of the main operation
+      # logic
       attr_reader :attribute_set
 
       private
 
+      # the standard strategy for defining swagger-blocks is with attributes. in the case
+      # of a Definition, which inherits from this module, it becomes properties. so this
+      # method is overridden in Definition
       def attribute_strategy
         :attribute
       end
 
+      # similar to #attribute_strategy, the attribute set typically is a collection of
+      # attributes. but other classes inherit from this class, so it can be overridden
       def attribute_set_class
         SmashTheState::Operation::Swagger::AttributeSet
       end
 
-      # hijack the attribute method
+      # hijack the attribute method that is provided by activemodel attributes
       def attribute(name, type, options = {})
-        # run the standard attribute-adding code
+        # run the standard active model-y attribute-adding code before custom behaviors
         super(
           name,
           type,

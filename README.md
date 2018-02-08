@@ -176,7 +176,7 @@ end
 
 ## Swagger
 
-If you use [Swagger Blocks](https://github.com/fotinakis/swagger-blocks/), you can generate a parameter blocks from your operation schema by extending the state with the Swagger mixin. The `attribute` method is extended to support Swagger options like `description`, `required`, etc. The ActiveModel attribute types will be converted to the closest matching Swagger types for you (example: `:big_decimal` translates into Swagger type `:integer` with format `:int64`.)
+If you use [Swagger Blocks](https://github.com/fotinakis/swagger-blocks/), you can generate a parameter blocks from your operation schema by extending the state with the Swagger mixin. The `attribute` method is extended to support Swagger options like `description`, `required`, etc. The ActiveModel attribute types will be converted to the closest matching Swagger types for you (example: `:big_decimal` translates into Swagger type `:integer` with format `:int64`.) You will need to call `Operation#eval_swagger` and pass in both the current swagger-blocks scope and the top-level swagger-blocks scope.
 
 ``` ruby
 class CreateDatabaseOperation < SmashTheState::Operation
@@ -192,7 +192,7 @@ class DatabaseController < AbstractController
   swagger_path '/databases' do
     operation :post do
       key :summary, 'Create a database'
-      CreateDatabaseOperation.eval_swagger_params(self)
+      CreateDatabaseOperation.eval_swagger(self, DatabaseController)
     end
   end
 end
@@ -341,3 +341,42 @@ end
 ```
 
 Calling `as_json` on a state will recurse through the nesting to produce a nested hash.
+
+## Type Definitions
+
+Smash the State supports re-usable type definitions that can help to DRY up your operation states. In the above nested schema example, we can DRY up the host schema by turning it into a definition:
+
+``` ruby
+class HostDefinition < SmashTheState::Operation::Definition
+  definition "Host"
+
+  schema do
+    attribute :name, :string
+
+    schema :resources do
+      attribute :ram_units, :integer
+      attribute :cpu_units, :integer
+    end
+  end
+end
+```
+
+Which can then be re-used in other schemas:
+
+``` ruby
+class Database::Create < Compose::Operation
+  schema do
+    attribute :type, :string
+    schema :host, ref: HostDefinition
+  end
+end
+```
+
+If you use swagger, you can extend your definition with the swagger-blocks-compatible `Swagger::Definition` module. This module will produce a swagger type for your definition and will produce a swagger reference to it whenever operations that refer your definition are evaluated into swagger blocks.
+
+``` ruby
+class HostDefinition < SmashTheState::Operation::Definition
+  extend SmashTheState::Operation::Swagger::Definition
+  # ... etc
+end
+```

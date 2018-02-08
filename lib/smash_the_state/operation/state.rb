@@ -23,6 +23,9 @@ module SmashTheState
           end
         end
 
+        # defines a nested schema inside of a state. can be nested arbitrarily
+        # deep. schemas may be described inline via a block *or* can be a reference to a
+        # definition
         def schema(key, options = {}, &block)
           attribute key,
                     :state_for_smashing,
@@ -59,6 +62,7 @@ module SmashTheState
 
         private
 
+        # if a reference to a definition is provided, use the reference schema block
         def attribute_options_to_ref_block(options)
           options[:ref] && options[:ref].schema_block
         end

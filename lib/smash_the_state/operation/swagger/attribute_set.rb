@@ -8,14 +8,18 @@ module SmashTheState
           @swagger_attributes = HashWithIndifferentAccess.new
         end
 
+        # an attribute is a type on a schema
         def add_attribute(name, type, options = {})
           swagger_attributes[name] = Attribute.new(name, type, options)
         end
 
+        # swagger differentiates between attributes and properties, but really they're
+        # almost exactly the same. still, we need to differentiate
         def add_property(name, type, options = {})
           swagger_attributes[name] = Property.new(name, type, options)
         end
 
+        # this method will be called from a swagger-blocks context like a Rails controller
         def eval_swagger(swagger_operation, swagger_context)
           swagger_attributes.keys.each do |name|
             eval_swagger_param(swagger_attributes[name], swagger_operation)
@@ -24,6 +28,7 @@ module SmashTheState
           eval_swagger_definitions(swagger_context)
         end
 
+        # provides an interface for overriding a swagger parameter in a swagger-blocks context
         def override_swagger_param(name, &block)
           attr = swagger_attributes[name]
           return if attr.nil?
@@ -31,6 +36,8 @@ module SmashTheState
           attr.override_blocks << block
         end
 
+        # provides an interface for overriding several swagger parameters in a
+        # swagger-blocks context
         def override_swagger_params(&block)
           swagger_attributes.keys.each do |name|
             swagger_attributes[name].override_blocks << block
