@@ -23,7 +23,7 @@ module SmashTheState
         def schema(name = nil, options = {}, &block)
           # if a name is provided, it's an inline schema or a reference to another
           # definition
-          return super unless name.nil?
+          return super(name, options, &block) unless name.nil?
 
           # called with no name, we infer that this is the definition's own schema. the
           # provided schema block is both stored for re-use and also evaluated in the

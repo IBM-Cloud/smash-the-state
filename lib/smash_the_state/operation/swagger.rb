@@ -1,6 +1,7 @@
 require_relative 'swagger/attribute'
 require_relative 'swagger/property'
 require_relative 'swagger/attribute_set'
+require_relative 'swagger/flat_properties_set'
 require_relative 'swagger/definition'
 
 module SmashTheState
@@ -53,7 +54,6 @@ module SmashTheState
         )
 
         @attribute_set.send("add_#{attribute_strategy}", name, type, options)
-
         return if options[:ref].nil?
 
         # add any referenced type definitions to the operation so that they can also be
