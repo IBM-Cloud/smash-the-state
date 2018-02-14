@@ -16,7 +16,7 @@ module SmashTheState
         attr_accessor(*SWAGGER_KEYS)
         attr_accessor :override_blocks, :block, :ref
 
-        def initialize(name, type, options)
+        def initialize(name, type, options = {})
           @name        = symbolize(name)
           @type        = symbolize(type)
           @description = options[:description].to_s
@@ -61,11 +61,12 @@ module SmashTheState
         end
 
         def evaluate_to_flat_properties(context)
-          flat_properties= Swagger::FlatPropertiesSet.new
+          flat_properties = Swagger::FlatPropertiesSet.new
           flat_properties.instance_eval(&@block)
           flat_properties.evaluate_swagger(context)
         end
 
+        # rubocop:disable Metrics/MethodLength
         def evaluate_type(context, options = {})
           attribute = self
           parent_context = options[:parent_context]
@@ -97,13 +98,18 @@ module SmashTheState
             attribute.evaluate_override_blocks(self)
           end
         end
+        # rubocop:enable Metrics/MethodLength
 
         def needs_additional_swagger_keys?(context, parent_context)
+          # swagger keys like "in" and "name" should not be present when the parent
+          # context is a property or schema node
           return false if [
             ::Swagger::Blocks::Nodes::PropertyNode,
             ::Swagger::Blocks::Nodes::SchemaNode
-            ].include?(parent_context.class)
+          ].include?(parent_context.class)
 
+          # the aforementioned swagger keys also should not be present for property nodes
+          # in any situation
           return false if context.is_a?(::Swagger::Blocks::Nodes::PropertyNode)
 
           true
@@ -147,16 +153,13 @@ module SmashTheState
           swagger_context.instance_eval do
             (SWAGGER_KEYS - [:type, :format]).each do |k|
               value = attribute.send(k)
-
-              unless value == "" or value.nil?
-                key k, value
-              end
+              key(k, value) unless value == "" || value.nil?
             end
           end
         end
 
-        # provides a somewhat DRY interface for evaluating various types of swagger blocks
-        # in a given context
+        private
+
         def evaluate_to_block(method_name, context)
           attribute = self
 
@@ -166,8 +169,6 @@ module SmashTheState
             end
           end
         end
-
-        private
 
         def symbolize(value)
           value && value.to_sym

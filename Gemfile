@@ -6,4 +6,5 @@ group :development, :test do
   gem "rspec"
   gem "pry"
   gem "rubocop"
+  gem "swagger-blocks"
 end
