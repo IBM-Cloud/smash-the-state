@@ -1,16 +1,16 @@
 require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
-require_relative 'operation/swagger'
 require_relative 'operation/state'
 require_relative 'operation/state_type'
+require_relative 'operation/swagger'
 
 module SmashTheState
   class Operation
     class << self
       attr_reader :state_class
 
-      delegate :eval_swagger_params,
+      delegate :eval_swagger,
                :override_swagger_param,
                :override_swagger_params,
                to: :state_class
@@ -18,8 +18,11 @@ module SmashTheState
       # Runs the operation, creating the state based on the provided params,
       # passing it from step to step and returning the last step.
       def call(params = {})
-        state = state_class.new(params)
-        sequence.call(state)
+        # state class can be nil if the schema is never defined. that's ok. in that
+        # situation it's up to the first step to produce the original state and we'll pass
+        # the params themselves in
+        state = state_class && state_class.new(params)
+        sequence.call(state || params)
       end
 
       # inheritance doesn't work with class attr_readers, this method is provided to
