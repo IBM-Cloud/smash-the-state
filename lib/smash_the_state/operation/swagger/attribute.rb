@@ -10,6 +10,8 @@ module SmashTheState
           :description,
           :type,
           :format,
+          # not doing required for now because nesting schemas
+          # gets too complicated
           # :required
         ].freeze
 
