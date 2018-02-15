@@ -112,7 +112,7 @@ class MyOperation < SmashTheState::Operation
   end
 
   step :do_more_things do |state, params|
-    # original_state will be the same as the initial params
+    # params will be the initial params
     # ... and so on
   end
 end
