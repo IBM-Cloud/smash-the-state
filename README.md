@@ -96,6 +96,28 @@ class CreateAnalyticsOperation < SmashTheState::Operation
 end
 ```
 
+## Dynamic State Classes (built at runtime)
+
+Maybe your operation needs a more flexible schema than a static state class can provide. If you need your state class to be evaluated at runtime, you can omit a schema block and the raw params will be passed in as the initial state. From there you can create whatever state class you desire from inside the first step.
+
+```ruby
+class MyOperation < SmashTheState::Operation
+  step :custom_state_class do |params|
+    c = Operation::State.build do
+      # create whatever state class you need at runtime
+      attribute :some_name, :some_type
+    end
+
+    c.new(params)
+  end
+
+  step :do_more_things do |state, params|
+    # params will be the initial params
+    # ... and so on
+  end
+end
+```
+
 ## Middleware
 
 You can define middleware classes to which the operation can delegate steps. The middleware class names can be arbitrarily composed by information pulled from the state.

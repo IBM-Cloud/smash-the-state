@@ -26,6 +26,20 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "with no defined schema" do
+    let!(:params) { double }
+    let!(:klass) do
+      Class.new(SmashTheState::Operation)
+    end
+
+    let!(:sequence) { klass.send(:sequence) }
+
+    it "passes in the raw params as the initial state" do
+      expect(sequence).to receive(:call).with(params)
+      klass.call(params)
+    end
+  end
+
   describe "#self.schema" do
     before do
       klass.schema do

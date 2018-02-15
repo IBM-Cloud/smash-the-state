@@ -9,17 +9,18 @@ module SmashTheState
       end
 
       def call(state)
-        # retain the original state
+        # retain a copy of the original state so that we can refer to it for posterity as
+        # the operation state gets mutated over time
         original_state = state.dup
         current_step = nil
 
         @steps.reduce(state) do |memo, step|
           current_step = step
 
-          # we're gonna pass the state from the previous step into the
-          # implementation as 'memo', but for convenience, we'll also always
-          # pass the original state into the implementation as 'state' so that
-          # no matter what you can get to your original input
+          # we're gonna pass the state from the previous step into the implementation as
+          # 'memo', but for convenience, we'll also always pass the original state into
+          # the implementation as 'original_state' so that no matter what you can get to
+          # your original input
           step.implementation.call(memo, original_state)
         end
       rescue Operation::State::Invalid => e
