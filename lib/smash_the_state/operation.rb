@@ -4,17 +4,11 @@ require_relative 'operation/step'
 require_relative 'operation/state'
 require_relative 'operation/state_type'
 require_relative 'operation/definition'
-require_relative 'operation/swagger'
 
 module SmashTheState
   class Operation
     class << self
       attr_reader :state_class
-
-      delegate :eval_swagger,
-               :override_swagger_param,
-               :override_swagger_params,
-               to: :state_class
 
       # Runs the operation, creating the state based on the provided params,
       # passing it from step to step and returning the last step.

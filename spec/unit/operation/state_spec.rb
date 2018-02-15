@@ -30,8 +30,6 @@ describe SmashTheState::Operation::State do
 
     let!(:built) do
       subject.build do
-        extend SmashTheState::Operation::Swagger
-
         schema :bread do
           attribute :loaves, :integer
 

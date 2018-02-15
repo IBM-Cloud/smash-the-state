@@ -196,70 +196,6 @@ end
 => {name: "AbsintheDB", foo: "bar"}
 ```
 
-## Swagger
-
-If you use [Swagger Blocks](https://github.com/fotinakis/swagger-blocks/), you can generate a parameter blocks from your operation schema by extending the state with the Swagger mixin. The `attribute` method is extended to support Swagger options like `description`, `required`, etc. The ActiveModel attribute types will be converted to the closest matching Swagger types for you (example: `:big_decimal` translates into Swagger type `:integer` with format `:int64`.) You will need to call `Operation#eval_swagger` and pass in both the current swagger-blocks scope and the top-level swagger-blocks scope.
-
-``` ruby
-class CreateDatabaseOperation < SmashTheState::Operation
-  schema do
-    extend SmashTheState::Operation::Swagger
-    attribute :name, :string
-  end
-end
-```
-
-``` ruby
-class DatabaseController < AbstractController
-  swagger_path '/databases' do
-    operation :post do
-      key :summary, 'Create a database'
-      CreateDatabaseOperation.eval_swagger(self, DatabaseController)
-    end
-  end
-end
-```
-
-### Overrides
-
-Because operations are meant to be portable, sometimes you need to override the Swagger block defaults. Say, in this controller `name` is in the path instead of the body.
-
-``` ruby
-class DatabaseController < AbstractController
-  swagger_path '/databases/{name}' do
-    operation :post do
-      key :summary, 'Create a database'
-
-      # the :name param now will be `in` :query rather than :body
-      CreateDatabaseOperation.override_swagger_param(:name) do
-        key :in, :path
-      end
-
-      CreateDatabaseOperation.eval_swagger_params(self)
-    end
-  end
-end
-```
-
-Or if you need to change some keys for all the params, you can use `override_swagger_params`:
-
-``` ruby
-class DatabaseController < AbstractController
-  swagger_path '/databases' do
-    operation :post do
-      key :summary, 'Create a database'
-
-      # all swagger params now will be `in` :query rather than :body
-      CreateDatabaseOperation.override_swagger_params do
-        key :in, :query
-      end
-
-      CreateDatabaseOperation.eval_swagger_params(self)
-    end
-  end
-end
-```
-
 ## Policy
 
 [Pundit](https://github.com/elabs/pundit) style policies are supported via a `policy` method. Failing policies raise a `SmashTheState::Operation::NotAuthorized` exception and run at the position in the sequence in which they are defined. Pass `current_user` into your operation alongside your params.
@@ -391,14 +327,5 @@ class Database::Create < Compose::Operation
     attribute :type, :string
     schema :host, ref: HostDefinition
   end
-end
-```
-
-If you use swagger, you can extend your definition with the swagger-blocks-compatible `Swagger::Definition` module. This module will produce a swagger type for your definition and will produce a swagger reference to it whenever operations that refer your definition are evaluated into swagger blocks.
-
-``` ruby
-class HostDefinition < SmashTheState::Operation::Definition
-  extend SmashTheState::Operation::Swagger::Definition
-  # ... etc
 end
 ```
