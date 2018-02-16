@@ -268,37 +268,52 @@ describe SmashTheState::Operation do
   end
 
   describe "#continues_from" do
-    let!(:continuing_operation) do
-      Class.new(SmashTheState::Operation).tap do |k1|
-        k1.class_eval do
-          prelude_klass = Class.new(SmashTheState::Operation).tap do |k2|
-            k2.class_eval do
-              schema do
-                attribute :name, :string
-                attribute :age, :integer
-              end
+    context "with a state class" do
+      let!(:continuing_operation) do
+        Class.new(SmashTheState::Operation).tap do |k1|
+          k1.class_eval do
+            prelude_klass = Class.new(SmashTheState::Operation).tap do |k2|
+              k2.class_eval do
+                schema do
+                  attribute :name, :string
+                  attribute :age, :integer
+                end
 
-              step :prelude_step do |state|
-                state.name = "Peter"
-                state
+                step :prelude_step do |state|
+                  state.name = "Peter"
+                  state
+                end
               end
             end
-          end
 
-          continues_from prelude_klass
+            continues_from prelude_klass
 
-          step :extra_step do |state|
-            state.age = 166
-            state
+            step :extra_step do |state|
+              state.age = 166
+              state
+            end
           end
         end
       end
+
+      it "continues from the prelude operation" do
+        result = continuing_operation.call({})
+        expect(result.name).to eq("Peter")
+        expect(result.age).to eq(166)
+      end
     end
 
-    it "continues from the prelude operation" do
-      result = continuing_operation.call({})
-      expect(result.name).to eq("Peter")
-      expect(result.age).to eq(166)
+    context "with a nil state class" do
+      it "doesn't try to dup a nil state class" do
+        op = Class.new(SmashTheState::Operation).tap do |k1|
+          k1.class_eval do
+            prelude_klass = Class.new(SmashTheState::Operation)
+            continues_from prelude_klass
+          end
+        end
+
+        expect(op).to be_truthy
+      end
     end
   end
 end

@@ -23,7 +23,7 @@ module SmashTheState
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
       def continues_from(prelude)
-        @state_class = prelude.state_class.dup
+        @state_class = prelude.state_class && prelude.state_class.dup
         sequence.steps.concat prelude.sequence.steps
       end
 
