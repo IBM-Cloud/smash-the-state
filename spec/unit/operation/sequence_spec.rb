@@ -196,4 +196,40 @@ describe SmashTheState::Operation::Sequence do
       end
     end
   end
+
+  describe "#slice" do
+    let!(:instance) { subject.new }
+
+    before do
+      instance.add_step(:one) do |state|
+        state << 1
+      end
+
+      instance.add_step(:two) do |state|
+        state << 2
+      end
+
+      instance.add_step(:three) do |state|
+        state << 3
+      end
+
+      instance.add_step(:four) do |state|
+        state << 4
+      end
+
+      instance.add_step(:five) do |state|
+        state << 5
+      end
+    end
+
+    it "returns a new sequence cut to the specified length from the " \
+       "specified start" do
+      sliced = instance.slice(1, 3)
+      expect(sliced.steps.map(&:name)).to eq([:two, :three, :four])
+
+      # doesn't mutate the original
+      expect(instance.steps.length).to eq(5)
+      expect(instance.object_id).to_not eq(sliced.object_id)
+    end
+  end
 end
