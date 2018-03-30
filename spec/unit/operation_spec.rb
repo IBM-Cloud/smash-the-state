@@ -242,6 +242,52 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "#dry_call" do
+    context "with a validation step" do
+      before do
+        klass.step :run_this do |state|
+          state.name = state.name + " People"
+          state
+        end
+
+        klass.validate do |_state|
+          validates_presence_of :name
+          validates_presence_of :age
+        end
+
+        klass.step :skip_this do |_state|
+          raise "should not hit this"
+        end
+      end
+
+      it "runs all the steps up to and including validation" do
+        result = klass.dry_call(name: "Snake")
+        expect(result.name).to eq("Snake People")
+        expect(result.errors[:name]).to be_empty
+        expect(result.errors[:age]).to eq(["can't be blank"])
+      end
+    end
+
+    context "with no validation step" do
+      before do
+        klass.step :run_this do |state|
+          state.name = state.name + " People"
+          state
+        end
+
+        klass.step :skip_this do |_state|
+          raise "should not hit this"
+        end
+      end
+
+      it "returns the initial state" do
+        result = klass.dry_call(name: "Snake")
+        expect(result.name).to eq("Snake")
+        expect(result.errors).to be_empty
+      end
+    end
+  end
+
   describe "#represent" do
     let!(:representer) do
       Class.new.tap do |k|
