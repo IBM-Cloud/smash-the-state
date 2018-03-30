@@ -329,3 +329,47 @@ class Database::Create < Compose::Operation
   end
 end
 ```
+
+## Dry Runs
+
+Operations support execution of steps up to and including validation by way of the `dry_call/dry_run` method. When `dry_call/dry_run` is called, the resulting state of the validation step is returned. Errors will be accessible via the standard ActiveModel errors interface. When dry running, steps following validation will never be run. Steps prior to validation will be run, giving any setup a chance to do its thing as it normally would.
+
+``` ruby
+class CreateUserOperation < SmashTheState::Operation
+  schema do
+    attribute :email, :string
+    attribute :name,  :string
+    attribute :age,   :integer
+  end
+
+  step :downcase_email do |state|
+    state.name ||= "Unnamed"
+    state
+  end
+
+  validate do
+    validates_presence_of :email
+  end
+
+  step :reverse_name do |state|
+    # won't ever reach this step when dry run
+    state.name.reverse!
+  end
+end
+```
+
+``` ruby
+> result = CreateUserOperation.dry_call(email: "jack@sparrow.com", age: 31)
+> result.errors.empty?
+=> true
+> result.name
+=> "Unnamed"
+```
+
+``` ruby
+> result = CreateUserOperation.dry_call(name: "Sam", age: 31)
+> result.errors.empty?
+=> false
+> result.errors["email"]
+=> ["can't be blank"]
+```
