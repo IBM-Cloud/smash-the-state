@@ -76,7 +76,7 @@ module SmashTheState
 
       def represent(representer)
         step :represent do |state|
-          representer.new(state)
+          representer.represent(state)
         end
       end
 
