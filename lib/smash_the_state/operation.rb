@@ -13,12 +13,27 @@ module SmashTheState
       # Runs the operation, creating the state based on the provided params,
       # passing it from step to step and returning the last step.
       def call(params = {})
-        # state class can be nil if the schema is never defined. that's ok. in that
-        # situation it's up to the first step to produce the original state and we'll pass
-        # the params themselves in
-        state = state_class && state_class.new(params)
-        sequence.call(state || params)
+        run_sequence(sequence, params)
       end
+      alias run call
+
+      def dry_call(params = {})
+        # find the validation step
+        validation_step_index = sequence.
+                                  steps.
+                                  index { |step| step.name == :validate }
+
+        seq = if validation_step_index.nil?
+                # validation missing? run no steps and return initial state
+                sequence.slice(0, 0)
+              else
+                # validation present? run everything up to and including validation
+                sequence.slice(0, validation_step_index + 1)
+              end
+
+        run_sequence(seq, params)
+      end
+      alias dry_run dry_call
 
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
@@ -88,6 +103,14 @@ module SmashTheState
 
       def error!(state)
         raise Error, state
+      end
+
+      def run_sequence(sequence_to_run, params = {})
+        # state class can be nil if the schema is never defined. that's ok. in that
+        # situation it's up to the first step to produce the original state and we'll pass
+        # the params themselves in
+        state = state_class && state_class.new(params)
+        sequence_to_run.call(state || params)
       end
     end
   end
