@@ -332,7 +332,14 @@ end
 
 ## Dry Runs
 
-Operations support execution of steps up to and including validation by way of the `dry_call/dry_run` method. When `dry_call/dry_run` is called, the resulting state of the validation step is returned. Errors will be accessible via the standard ActiveModel errors interface. When dry running, steps following validation will never be run. Steps prior to validation will be run, giving any setup a chance to do its thing as it normally would.
+Operations support "dry run" execution. That is to say, dry runs should be idempotent but produce output that is similar to the output for a regular run. Because dry runs should be idempotent, steps that produce changes cannot be executed safely for dry runs.
+
+To get around this, individual steps may be marked as `dry_run_safe: true` (default is `false`). Steps that are not `dry_run_safe?` will be skipped when the run is dry. In order to keep the sequence sane, alternative implementations for non-`dry_run_safe?` steps may be specified with a `dry_run_for_step` method. The alternative implementation will be called instead of the original when running dry and should produce the same superficial state changes as the original implementation, but without causing any genuine underlying changes.
+
+Some things to note:
+* `represent` steps are always `dry_run_safe: true`
+* any steps proceeding `validate` steps are always marked `dry_run_safe: true`
+* middleware steps may be marked `dry_run_safe` on a case-by-case basis in the same manner as normal steps (example: `middleware_step :calculate_term, dry_run_safe: true do ... end`)
 
 ``` ruby
 class CreateUserOperation < SmashTheState::Operation
@@ -340,9 +347,10 @@ class CreateUserOperation < SmashTheState::Operation
     attribute :email, :string
     attribute :name,  :string
     attribute :age,   :integer
+    attribute :id,    :integer
   end
 
-  step :downcase_email do |state|
+  step :downcase_email, dry_run_safe: true do |state|
     state.name ||= "Unnamed"
     state
   end
@@ -351,25 +359,46 @@ class CreateUserOperation < SmashTheState::Operation
     validates_presence_of :email
   end
 
-  step :reverse_name do |state|
-    # won't ever reach this step when dry run
-    state.name.reverse!
+  # because this step creates a resource, this step is not safe for a dry run
+  # and is not marked dry_run_safe: true, so it will be skipped when run dry
+  step :create do |state|
+    result = SomeServer.post("/users")
+    state.id = result.id
+    state
+  end
+
+  # this alternative implementation will instead be executed when run dry,
+  # allowing the rest of the operation to function as if the :create step ran
+  dry_run_for_step :create do |state|
+    state.id = (Random.rand * 1000).ceil
+    state
+  end
+
+  # this step will be run regardless of whether the run is dry because it is
+  # marked dry_run_safe: true
+  step :add_phd, dry_run_safe: true do |state|
+    state.name = state.name + " Ph.D"
+    state
   end
 end
 ```
 
 ``` ruby
-> result = CreateUserOperation.dry_call(email: "jack@sparrow.com", age: 31)
+> result = CreateUserOperation.dry_run(email: "jack@sparrow.com", age: 31)
 > result.errors.empty?
 => true
 > result.name
-=> "Unnamed"
+=> "Unnamed Ph.D"
+> result.id
+=> 145
 ```
 
 ``` ruby
-> result = CreateUserOperation.dry_call(name: "Sam", age: 31)
+> result = CreateUserOperation.dry_run(name: "Sam", age: 31)
 > result.errors.empty?
 => false
 > result.errors["email"]
 => ["can't be blank"]
+> result.id
+=> nil
 ```
