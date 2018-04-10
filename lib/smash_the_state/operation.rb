@@ -17,23 +17,10 @@ module SmashTheState
       end
       alias run call
 
-      def dry_call(params = {})
-        # find the validation step
-        validation_step_index = sequence.
-                                  steps.
-                                  index { |step| step.name == :validate }
-
-        seq = if validation_step_index.nil?
-                # validation missing? run no steps and return initial state
-                sequence.slice(0, 0)
-              else
-                # validation present? run everything up to and including validation
-                sequence.slice(0, validation_step_index + 1)
-              end
-
-        run_sequence(seq, params)
+      def dry_run(params = {})
+        run_sequence(sequence.dry_run_safe, params)
       end
-      alias dry_run dry_call
+      alias dry_call dry_run
 
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
@@ -46,8 +33,34 @@ module SmashTheState
         @state_class = Operation::State.build(&block)
       end
 
-      def step(step_name, &block)
-        sequence.add_step(step_name, &block)
+      def step(step_name, options = {}, &block)
+        sequence.add_step(step_name, options, &block)
+      end
+
+      def dry_run_for_step(step_name, options = {}, &block)
+        existing_step = sequence.step_for_name(step_name)
+
+        if existing_step.nil?
+          raise "a dry run alternative was provided for undefined step " \
+                "#{step_name.inspect}".freeze
+        end
+
+        if existing_step.dry_run_safe?
+          raise "a dry run alternative to step #{step_name.inspect} was " \
+                "provided but it is already dry run safe".freeze
+        end
+
+        sequence.add_step(
+          step_name.to_s.concat("_dry_run_safe".freeze).to_sym,
+          options.merge(dry_run_safe: true)
+        ) do |state, original_state, run_options|
+          # guard against running outside of a dry run
+          if run_options[:dry] == true
+            block.yield(state, original_state, run_options)
+          else
+            state
+          end
+        end
       end
 
       def error(*steps, &block)
@@ -73,24 +86,30 @@ module SmashTheState
         sequence.middleware_class_block = block
       end
 
-      def middleware_step(step_name)
-        sequence.add_middleware_step(step_name)
+      def middleware_step(step_name, options = {})
+        sequence.add_middleware_step(step_name, options)
       end
 
       def validate(&block)
-        step :validate do |state|
+        # when we add a validation step, all proceeding steps must be safe for dry runs
+        # (subsequent steps are case-by-case)
+        sequence.dry_run_safe!
+        step :validate, dry_run_safe: true do |state|
           Operation::State.eval_validation_directives_block(state, &block)
         end
       end
 
       def custom_validation(&block)
-        step :validate do |state|
+        # when we add a validation step, all proceeding steps must be safe for dry runs
+        # (subsequent steps are case-by-case)
+        sequence.dry_run_safe!
+        step :validate, dry_run_safe: true do |state|
           Operation::State.eval_custom_validator_block(state, &block)
         end
       end
 
       def represent(representer)
-        step :represent do |state|
+        step :represent, dry_run_safe: true do |state|
           representer.represent(state)
         end
       end

@@ -54,7 +54,7 @@ describe SmashTheState::Operation do
 
   describe "#self.step" do
     before do
-      klass.step :first_name do |state|
+      klass.step :first_name, community: true do |state|
         state.tap do
           state.name = "Emma"
         end
@@ -94,6 +94,74 @@ describe SmashTheState::Operation do
         state = klass.call(age: 148)
         expect(state.name).to eq(nil)
         expect(state.age).to eq(148)
+      end
+
+      it "sets the options on the step" do
+        expect(klass.sequence.steps.first.options[:community]).to eq(true)
+      end
+    end
+  end
+
+  describe "self#dry_run_for_step" do
+    context "with a step that is not dry_run_safe" do
+      before do
+        klass.step :step_one do |state|
+          state.name = state.name + " foo"
+          state
+        end
+
+        klass.dry_run_for_step :step_one do |state|
+          state.name = state.name + " bar"
+          state
+        end
+      end
+
+      it "defines a dry_run_safe step with a _dry_run_safe suffix" do
+        step = klass.sequence.steps.last
+        expect(step.name).to eq(:step_one_dry_run_safe)
+        expect(step.dry_run_safe?).to eq(true)
+      end
+
+      context "called in a dry run" do
+        it "runs the alternative but not the normal step" do
+          expect(klass.dry_run(name: "zip").name).to eq("zip bar")
+        end
+      end
+
+      context "called not in a dry run" do
+        it "runs the normal but not the alternative step" do
+          expect(klass.call(name: "zip").name).to eq("zip foo")
+        end
+      end
+    end
+
+    context "with a step that is dry_run_safe" do
+      before do
+        klass.step :step_one, dry_run_safe: true do |_state|
+          :step_one
+        end
+      end
+
+      it "raises an exception" do
+        begin
+          klass.dry_run_for_step :step_one do
+          end
+        rescue => e
+          expect(e.to_s).to include("it is already dry run safe")
+        end
+      end
+    end
+
+    context "with no matching step" do
+      it "raises an exception" do
+        begin
+          klass.dry_run_for_step :step_one do
+          end
+        rescue => e
+          expect(
+            e.to_s
+          ).to include("a dry run alternative was provided for undefined step")
+        end
       end
     end
   end
@@ -201,10 +269,11 @@ describe SmashTheState::Operation do
   describe "self#middleware_step" do
     let!(:sequence) { klass.send(:sequence) }
     let!(:step_name) { :means_of_production }
+    let!(:step_options) { { foo: :bar } }
 
     it "delegates to sequence#add_middleware_step" do
-      expect(sequence).to receive(:add_middleware_step).with(step_name)
-      klass.middleware_step :means_of_production
+      expect(sequence).to receive(:add_middleware_step).with(step_name, step_options)
+      klass.middleware_step :means_of_production, step_options
     end
   end
 
@@ -219,7 +288,8 @@ describe SmashTheState::Operation do
       end
     end
 
-    it "adds a validation step with the specified block, skips subsequent steps" do
+    it "adds a validation step with the specified block, marked as " \
+       "dry run safe, that skips non-dry_run_safe? steps" do
       state = klass.call(name: nil)
       expect(state.errors[:name]).to include("can't be blank")
     end
@@ -242,7 +312,7 @@ describe SmashTheState::Operation do
     end
   end
 
-  describe "#dry_call" do
+  describe "#dry_run" do
     context "with a validation step" do
       before do
         klass.step :run_this do |state|
@@ -258,19 +328,28 @@ describe SmashTheState::Operation do
         klass.step :skip_this do |_state|
           raise "should not hit this"
         end
+
+        klass.step :safe, dry_run_safe: true do |state|
+          state.name = state.name + " are nice"
+          state
+        end
       end
 
-      it "runs all the steps up to and including validation" do
-        result = klass.dry_call(name: "Snake")
+      it "runs all the steps up to and including validation, plus any " \
+         "further steps marked dry_run_safe" do
+        result = klass.dry_run(name: "Snake")
         expect(result.name).to eq("Snake People")
         expect(result.errors[:name]).to be_empty
         expect(result.errors[:age]).to eq(["can't be blank"])
+
+        result = klass.dry_run(name: "Snake", age: 35)
+        expect(result.name).to eq("Snake People are nice")
       end
     end
 
     context "with no validation step" do
       before do
-        klass.step :run_this do |state|
+        klass.step :run_this, dry_run_safe: true do |state|
           state.name = state.name + " People"
           state
         end
@@ -280,9 +359,9 @@ describe SmashTheState::Operation do
         end
       end
 
-      it "returns the initial state" do
+      it "returns the state produced by the dry_run_safe? steps" do
         result = klass.dry_call(name: "Snake")
-        expect(result.name).to eq("Snake")
+        expect(result.name).to eq("Snake People")
         expect(result.errors).to be_empty
       end
     end
@@ -311,12 +390,15 @@ describe SmashTheState::Operation do
       klass.represent representer
     end
 
-    it "adds a representer step, which returns a representer initialized " \
-       "with the state" do
+    it "adds a representer step, marked as dry_run_safe, which returns a " \
+       "representer initialized with the state" do
       expect(representer).to receive(:represent).and_call_original
       represented = klass.call(params)
       expect(represented).to be_a(representer)
       expect(represented.state.name).to eq("zeus")
+
+      step = klass.sequence.steps.find { |s| s.name == :represent }
+      expect(step.dry_run_safe?).to eq(true)
     end
   end
 
