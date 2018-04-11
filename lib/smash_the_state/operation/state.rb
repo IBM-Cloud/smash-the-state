@@ -49,11 +49,10 @@ module SmashTheState
         end
 
         # for non-ActiveModel states we will just evaluate the block as a validator
-        def eval_custom_validator_block(state, &block)
-          state.tap do |s|
-            s.instance_eval(&block)
-            invalid!(s) if s.errors.present?
-          end
+        def eval_custom_validator_block(state, original_state = nil)
+          yield(state, original_state)
+          invalid!(state) if state.errors.present?
+          state
         end
 
         def model_name

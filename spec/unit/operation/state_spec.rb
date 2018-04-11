@@ -111,7 +111,7 @@ describe SmashTheState::Operation::State do
 
     let!(:instance) { built.new }
 
-    it "instance_evals the block" do
+    it "calls the block" do
       begin
         SmashTheState::Operation::State.eval_custom_validator_block(instance) do |i|
           i.errors.add(:bread, "is moldy")
@@ -119,6 +119,15 @@ describe SmashTheState::Operation::State do
       rescue SmashTheState::Operation::State::Invalid => e
         expect(e.state.errors[:bread]).to include("is moldy")
       end
+    end
+
+    it "only raises an error for the current state" do
+      state = SmashTheState::Operation::State.
+                eval_custom_validator_block(instance, built.new) do |_i, original_state|
+        original_state.errors.add(:bread, "is moldy")
+      end
+
+      expect(state).to eq(instance)
     end
 
     context "with no errors present" do

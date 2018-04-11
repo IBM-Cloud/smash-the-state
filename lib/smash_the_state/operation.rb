@@ -84,8 +84,8 @@ module SmashTheState
       end
 
       def custom_validation(&block)
-        step :validate do |state|
-          Operation::State.eval_custom_validator_block(state, &block)
+        step :validate do |state, original_state|
+          Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end
 
