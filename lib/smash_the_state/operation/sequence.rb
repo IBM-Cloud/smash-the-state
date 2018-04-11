@@ -26,19 +26,19 @@ module SmashTheState
         end
       end
 
-      # return a copy with only the dry-run-safe steps
-      def dry_run_safe
+      # return a copy without the steps that produce side-effects
+      def side_effect_free
         dup.tap do |seq|
           seq.run_options[:dry] = true
           seq.instance_eval do
-            @steps = seq.steps.select(&:dry_run_safe?)
+            @steps = seq.steps.select(&:side_effect_free?)
           end
         end
       end
 
-      # marks all the the currently defined steps as dry run safe
-      def dry_run_safe!
-        steps.each { |s| s.options[:dry_run_safe] = true }
+      # marks all the the currently defined steps as free of side-effects
+      def mark_as_side_effect_free!
+        steps.each { |s| s.options[:side_effect_free] = true }
       end
 
       def add_step(step_name, options = {}, &block)

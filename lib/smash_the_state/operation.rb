@@ -2,11 +2,14 @@ require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
 require_relative 'operation/state'
+require_relative 'operation/dry_run'
 require_relative 'operation/state_type'
 require_relative 'operation/definition'
 
 module SmashTheState
   class Operation
+    extend DryRun
+
     class << self
       attr_reader :state_class
 
@@ -16,11 +19,6 @@ module SmashTheState
         run_sequence(sequence, params)
       end
       alias run call
-
-      def dry_run(params = {})
-        run_sequence(sequence.dry_run_safe, params)
-      end
-      alias dry_call dry_run
 
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
@@ -35,32 +33,6 @@ module SmashTheState
 
       def step(step_name, options = {}, &block)
         sequence.add_step(step_name, options, &block)
-      end
-
-      def dry_run_for_step(step_name, options = {}, &block)
-        existing_step = sequence.step_for_name(step_name)
-
-        if existing_step.nil?
-          raise "a dry run alternative was provided for undefined step " \
-                "#{step_name.inspect}".freeze
-        end
-
-        if existing_step.dry_run_safe?
-          raise "a dry run alternative to step #{step_name.inspect} was " \
-                "provided but it is already dry run safe".freeze
-        end
-
-        sequence.add_step(
-          step_name.to_s.concat("_dry_run_safe".freeze).to_sym,
-          options.merge(dry_run_safe: true)
-        ) do |state, original_state, run_options|
-          # guard against running outside of a dry run
-          if run_options[:dry] == true
-            block.yield(state, original_state, run_options)
-          else
-            state
-          end
-        end
       end
 
       def error(*steps, &block)
@@ -91,25 +63,25 @@ module SmashTheState
       end
 
       def validate(&block)
-        # when we add a validation step, all proceeding steps must be safe for dry runs
-        # (subsequent steps are case-by-case)
-        sequence.dry_run_safe!
-        step :validate, dry_run_safe: true do |state|
+        # when we add a validation step, all proceeding steps must not produce
+        # side-effects (subsequent steps are case-by-case)
+        sequence.mark_as_side_effect_free!
+        step :validate, side_effect_free: true do |state|
           Operation::State.eval_validation_directives_block(state, &block)
         end
       end
 
       def custom_validation(&block)
-        # when we add a validation step, all proceeding steps must be safe for dry runs
-        # (subsequent steps are case-by-case)
-        sequence.dry_run_safe!
-        step :validate, dry_run_safe: true do |state, original_state|
+        # when we add a validation step, all proceeding steps must not produce
+        # side-effects (subsequent steps are case-by-case)
+        sequence.mark_as_side_effect_free!
+        step :validate, side_effect_free: true do |state, original_state|
           Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end
 
       def represent(representer)
-        step :represent, dry_run_safe: true do |state|
+        step :represent, side_effect_free: true do |state|
           representer.represent(state)
         end
       end

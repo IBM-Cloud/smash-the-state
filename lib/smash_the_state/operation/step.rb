@@ -9,12 +9,12 @@ module SmashTheState
         @implementation = block
         @options        = {
           # defaults
-          dry_run_safe: false
+          side_effect_free: nil # nil roughly implies unknown
         }.merge(options)
       end
 
-      def dry_run_safe?
-        options[:dry_run_safe] == true
+      def side_effect_free?
+        options[:side_effect_free] == true
       end
     end
   end
