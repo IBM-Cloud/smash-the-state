@@ -103,8 +103,8 @@ module SmashTheState
         # when we add a validation step, all proceeding steps must be safe for dry runs
         # (subsequent steps are case-by-case)
         sequence.dry_run_safe!
-        step :validate, dry_run_safe: true do |state|
-          Operation::State.eval_custom_validator_block(state, &block)
+        step :validate, dry_run_safe: true do |state, original_state|
+          Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end
 
