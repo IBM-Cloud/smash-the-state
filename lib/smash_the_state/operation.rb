@@ -2,11 +2,14 @@ require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
 require_relative 'operation/state'
+require_relative 'operation/dry_run'
 require_relative 'operation/state_type'
 require_relative 'operation/definition'
 
 module SmashTheState
   class Operation
+    extend DryRun
+
     class << self
       attr_reader :state_class
 
@@ -16,24 +19,6 @@ module SmashTheState
         run_sequence(sequence, params)
       end
       alias run call
-
-      def dry_call(params = {})
-        # find the validation step
-        validation_step_index = sequence.
-                                  steps.
-                                  index { |step| step.name == :validate }
-
-        seq = if validation_step_index.nil?
-                # validation missing? run no steps and return initial state
-                sequence.slice(0, 0)
-              else
-                # validation present? run everything up to and including validation
-                sequence.slice(0, validation_step_index + 1)
-              end
-
-        run_sequence(seq, params)
-      end
-      alias dry_run dry_call
 
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
@@ -46,8 +31,8 @@ module SmashTheState
         @state_class = Operation::State.build(&block)
       end
 
-      def step(step_name, &block)
-        sequence.add_step(step_name, &block)
+      def step(step_name, options = {}, &block)
+        sequence.add_step(step_name, options, &block)
       end
 
       def error(*steps, &block)
@@ -73,24 +58,30 @@ module SmashTheState
         sequence.middleware_class_block = block
       end
 
-      def middleware_step(step_name)
-        sequence.add_middleware_step(step_name)
+      def middleware_step(step_name, options = {})
+        sequence.add_middleware_step(step_name, options)
       end
 
       def validate(&block)
-        step :validate do |state|
+        # when we add a validation step, all proceeding steps must not produce
+        # side-effects (subsequent steps are case-by-case)
+        sequence.mark_as_side_effect_free!
+        step :validate, side_effect_free: true do |state|
           Operation::State.eval_validation_directives_block(state, &block)
         end
       end
 
       def custom_validation(&block)
-        step :validate do |state, original_state|
+        # when we add a validation step, all proceeding steps must not produce
+        # side-effects (subsequent steps are case-by-case)
+        sequence.mark_as_side_effect_free!
+        step :validate, side_effect_free: true do |state, original_state|
           Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end
 
       def represent(representer)
-        step :represent do |state|
+        step :represent, side_effect_free: true do |state|
           representer.represent(state)
         end
       end

@@ -332,7 +332,10 @@ end
 
 ## Dry Runs
 
-Operations support execution of steps up to and including validation by way of the `dry_call/dry_run` method. When `dry_call/dry_run` is called, the resulting state of the validation step is returned. Errors will be accessible via the standard ActiveModel errors interface. When dry running, steps following validation will never be run. Steps prior to validation will be run, giving any setup a chance to do its thing as it normally would.
+Operations support "dry run" execution. That is to say, dry runs should not produce side-effects but produce output that is similar to the output for a regular run. Because dry runs should not produce side-effects, steps that persist changes cannot be executed safely for dry runs.
+
+To get around this, a specific sequence can be defined for use when running dry. The dry run sequence can refer to steps in the normal sequence by name. Alternatively, if the step produces side-effects, an alternate version of the step can be provided that superficially behaves similarly. Steps also may be skipped entirely simply by omission.
+
 
 ``` ruby
 class CreateUserOperation < SmashTheState::Operation
@@ -340,6 +343,7 @@ class CreateUserOperation < SmashTheState::Operation
     attribute :email, :string
     attribute :name,  :string
     attribute :age,   :integer
+    attribute :id,    :integer
   end
 
   step :downcase_email do |state|
@@ -351,25 +355,50 @@ class CreateUserOperation < SmashTheState::Operation
     validates_presence_of :email
   end
 
-  step :reverse_name do |state|
-    # won't ever reach this step when dry run
-    state.name.reverse!
+  # because this step creates a resource, it produces side-effects and is not
+  # safe for a dry run
+  step :create do |state|
+    result = SomeServer.post("/users")
+    state.id = result.id
+    state
+  end
+
+  step :add_phd do |state|
+    state.name = state.name + " Ph.D"
+    state
+  end
+
+  dry_run_sequence do
+    step :downcase_email
+
+    # this alternative implementation will instead be executed when run dry,
+    # allowing the rest of the operation to function as if the :create step had run
+    step :create do |state|
+      state.id = (Random.rand * 1000).ceil
+      state
+    end
+
+    step :add_phd
   end
 end
 ```
 
 ``` ruby
-> result = CreateUserOperation.dry_call(email: "jack@sparrow.com", age: 31)
+> result = CreateUserOperation.dry_run(email: "jack@sparrow.com", age: 31)
 > result.errors.empty?
 => true
 > result.name
-=> "Unnamed"
+=> "Unnamed Ph.D"
+> result.id
+=> 145
 ```
 
 ``` ruby
-> result = CreateUserOperation.dry_call(name: "Sam", age: 31)
+> result = CreateUserOperation.dry_run(name: "Sam", age: 31)
 > result.errors.empty?
 => false
 > result.errors["email"]
 => ["can't be blank"]
+> result.id
+=> nil
 ```

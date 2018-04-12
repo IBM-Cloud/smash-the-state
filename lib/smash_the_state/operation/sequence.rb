@@ -2,10 +2,11 @@ module SmashTheState
   class Operation
     class Sequence
       attr_accessor :middleware_class_block
-      attr_reader :steps
+      attr_reader :steps, :run_options
 
       def initialize
         @steps = []
+        @run_options = { dry: false }
       end
 
       def call(state)
@@ -25,8 +26,27 @@ module SmashTheState
         end
       end
 
-      def add_step(step_name, &block)
-        @steps << Step.new(step_name, &block)
+      # return a copy without the steps that produce side-effects
+      def side_effect_free
+        dup.tap do |seq|
+          seq.run_options[:dry] = true
+          seq.instance_eval do
+            @steps = seq.steps.select(&:side_effect_free?)
+          end
+        end
+      end
+
+      # marks all the the currently defined steps as free of side-effects
+      def mark_as_side_effect_free!
+        steps.each { |s| s.options[:side_effect_free] = true }
+      end
+
+      def add_step(step_name, options = {}, &block)
+        @steps << Step.new(step_name, options, &block)
+      end
+
+      def step_for_name(name)
+        steps.find { |s| s.name == name }
       end
 
       def add_error_handler_for_step(step_name, &block)
@@ -44,8 +64,8 @@ module SmashTheState
         nil
       end
 
-      def add_middleware_step(step_name)
-        step = Operation::Step.new step_name do |state|
+      def add_middleware_step(step_name, options = {})
+        step = Operation::Step.new step_name, options do |state|
           if middleware_class(state).nil?
             # no-op
             state
@@ -72,7 +92,7 @@ module SmashTheState
           # 'memo', but for convenience, we'll also always pass the original state into
           # the implementation as 'original_state' so that no matter what you can get to
           # your original input
-          step.implementation.call(memo, original_state)
+          step.implementation.call(memo, original_state, run_options)
         end
       rescue Operation::State::Invalid => e
         e.state
