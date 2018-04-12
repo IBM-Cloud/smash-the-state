@@ -402,3 +402,21 @@ end
 > result.id
 => nil
 ```
+
+## Specs
+
+Some helpful RSpec helpers are provided.
+
+``` ruby
+# spec_helper.rb
+require 'smash_the_state/matchers'
+```
+
+``` ruby
+# continues_from
+expect(ContinuingOperation).to continue_from PreludeOperation
+
+# represent
+expect(RepresentingOperation).to represent_with SomeRepresenter
+expect(RepresentingOperation).to represent_collection_with SomeRepresenter
+```

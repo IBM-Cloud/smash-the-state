@@ -386,6 +386,36 @@ describe SmashTheState::Operation do
       step = klass.sequence.steps.find { |s| s.name == :represent }
       expect(step.side_effect_free?).to eq(true)
     end
+
+    describe "represent_with spec helper" do
+      it "matches" do
+        allow_any_instance_of(String).to receive(:as_json) do |string|
+          string
+        end
+
+        expect(klass).to represent_with representer
+      end
+    end
+
+    describe "represent_collection_with spec helper" do
+      it "matches" do
+        allow_any_instance_of(String).to receive(:as_json) do |string|
+          string
+        end
+
+        expect(klass).to represent_collection_with representer
+      end
+    end
+
+    describe "represent_collection spec helper" do
+      it "matches" do
+        allow_any_instance_of(String).to receive(:as_json) do |string|
+          { string => string }
+        end
+
+        expect(klass).to represent_collection "representation", with: representer
+      end
+    end
   end
 
   describe "#continues_from" do
@@ -393,7 +423,7 @@ describe SmashTheState::Operation do
       let!(:continuing_operation) do
         Class.new(SmashTheState::Operation).tap do |k1|
           k1.class_eval do
-            prelude_klass = Class.new(SmashTheState::Operation).tap do |k2|
+            @prelude_klass = Class.new(SmashTheState::Operation).tap do |k2|
               k2.class_eval do
                 schema do
                   attribute :name, :string
@@ -407,7 +437,7 @@ describe SmashTheState::Operation do
               end
             end
 
-            continues_from prelude_klass
+            continues_from @prelude_klass
 
             step :extra_step do |state|
               state.age = 166
@@ -421,6 +451,13 @@ describe SmashTheState::Operation do
         result = continuing_operation.call({})
         expect(result.name).to eq("Peter")
         expect(result.age).to eq(166)
+      end
+
+      describe "continues_from spec helper" do
+        it "matches" do
+          prelude = continuing_operation.instance_variable_get(:@prelude_klass)
+          expect(continuing_operation).to continue_from prelude
+        end
       end
     end
 
