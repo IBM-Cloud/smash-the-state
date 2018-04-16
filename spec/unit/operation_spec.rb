@@ -76,11 +76,11 @@ describe SmashTheState::Operation do
 
     describe "original state" do
       before do
-        klass.step :change_state_to_something_else do |_state|
+        klass.step :change_state_to_something_else1 do |_state|
           :something_else
         end
 
-        klass.step :change_state_to_something_else do |state, original_state|
+        klass.step :change_state_to_something_else2 do |state, original_state|
           # state should be changed by the previous step
           raise "should not hit this" unless state == :something_else
           # and switch the state back to the original state, which should be
@@ -276,7 +276,7 @@ describe SmashTheState::Operation do
       state = klass.call(name: nil)
       expect(state.errors[:name]).to include("can't be blank")
       expect(
-        klass.sequence.step_for_name(:validate).side_effect_free?
+        klass.sequence.steps_for_name(:validate).all?(&:side_effect_free?)
       ).to be true
     end
   end
@@ -434,6 +434,10 @@ describe SmashTheState::Operation do
                   state.name = "Peter"
                   state
                 end
+
+                dry_run_sequence do
+                  step :prelude_step
+                end
               end
             end
 
@@ -443,19 +447,30 @@ describe SmashTheState::Operation do
               state.age = 166
               state
             end
+
+            dry_run_sequence do
+              step :extra_step
+            end
           end
         end
+      end
+
+      let!(:prelude) do
+        continuing_operation.instance_variable_get(:@prelude_klass)
       end
 
       it "continues from the prelude operation" do
         result = continuing_operation.call({})
         expect(result.name).to eq("Peter")
         expect(result.age).to eq(166)
+
+        steps = continuing_operation.dry_run_sequence.steps.map(&:implementation)
+        prelude_steps = prelude.dry_run_sequence.steps.map(&:implementation)
+        expect(steps & prelude_steps).to eq(prelude_steps)
       end
 
       describe "continues_from spec helper" do
         it "matches" do
-          prelude = continuing_operation.instance_variable_get(:@prelude_klass)
           expect(continuing_operation).to continue_from prelude
         end
       end

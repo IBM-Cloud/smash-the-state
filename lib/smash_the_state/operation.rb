@@ -25,6 +25,9 @@ module SmashTheState
       def continues_from(prelude)
         @state_class = prelude.state_class && prelude.state_class.dup
         sequence.steps.concat prelude.sequence.steps
+
+        # also make the dry run sequence continue
+        dry_run_sequence.steps.concat(prelude.dry_run_sequence.steps)
       end
 
       def schema(&block)

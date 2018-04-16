@@ -42,11 +42,19 @@ module SmashTheState
       end
 
       def add_step(step_name, options = {}, &block)
+        # mulitple validation steps are okay but otherwise step names need to be unique
+        if step_name != :validate && !steps_for_name(step_name).empty?
+          raise "an operation step named #{step_name.inspect} already exists"
+        end
+
         @steps << Step.new(step_name, options, &block)
       end
 
-      def step_for_name(name)
-        steps.find { |s| s.name == name }
+      # returns steps named the specified name. it's generally bad form to have mulitple
+      # steps with the same name, but it can happen in some reasonable cases (the most
+      # common being :validate)
+      def steps_for_name(name)
+        steps.select { |s| s.name == name }
       end
 
       def add_error_handler_for_step(step_name, &block)
