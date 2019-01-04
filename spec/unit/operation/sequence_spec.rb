@@ -177,22 +177,34 @@ describe SmashTheState::Operation::Sequence do
     let!(:instance) { subject.new }
 
     context "with a middleware class defined" do
+      let!(:middleware_class) do
+        class SequenceSpecMiddleware
+          def self.extra_step(state, original_state)
+            state.merge(original_state)
+          end
+        end
+      end
+
       before do
         instance.middleware_class_block = proc do |_state|
-          "JSON"
+          "SequenceSpecMiddleware"
         end
 
-        instance.add_middleware_step :parse
+        instance.add_step :inline_step do |_state|
+          { baz: "bing" }
+        end
+
+        instance.add_middleware_step :extra_step
       end
 
       it "delegates the step to the middleware class" do
-        expect(instance.call('{"foo":"bar"}')).to eq("foo" => "bar")
+        expect(instance.call(foo: "bar")).to eq(baz: "bing", foo: "bar")
       end
     end
 
     context "with no middleware class defined" do
       it "just returns the state" do
-        expect(instance.call('{"foo":"bar"}')).to eq('{"foo":"bar"}')
+        expect(instance.call(foo: "bar")).to eq(foo: "bar")
       end
     end
   end
