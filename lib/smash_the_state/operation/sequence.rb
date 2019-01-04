@@ -73,12 +73,12 @@ module SmashTheState
       end
 
       def add_middleware_step(step_name, options = {})
-        step = Operation::Step.new step_name, options do |state|
+        step = Operation::Step.new step_name, options do |state, original_state|
           if middleware_class(state).nil?
             # no-op
             state
           else
-            middleware_class(state).send(step_name, state)
+            middleware_class(state).send(step_name, state, original_state)
           end
         end
 
