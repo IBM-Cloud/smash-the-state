@@ -178,7 +178,7 @@ describe SmashTheState::Operation::Sequence do
 
     context "with a middleware class defined" do
       let!(:middleware_class) do
-        class SequenceSpecMiddleware
+        class SequenceSpecBarMiddleware
           def self.extra_step(state, original_state)
             state.merge(original_state)
           end
@@ -186,25 +186,18 @@ describe SmashTheState::Operation::Sequence do
       end
 
       before do
-        instance.add_step :inline_step do |_state, _original_state|
+        instance.middleware_class_block = proc do |_state, original_state|
+          "SequenceSpec#{original_state[:foo].classify}Middleware"
+        end
+
+        instance.add_step :inline_step do |_state|
           { baz: "bing" }
         end
 
         instance.add_middleware_step :extra_step
       end
 
-      it "handles multiple parameters" do
-        instance.middleware_class_block = proc do |state, original_state|
-          expect(state).to eq(baz: "bing")
-          expect(original_state).to eq(foo: "bar")
-        end
-      end
-
       it "delegates the step to the middleware class" do
-        instance.middleware_class_block = proc do |_state, _original_state|
-          "SequenceSpecMiddleware"
-        end
-
         expect(instance.call(foo: "bar")).to eq(baz: "bing", foo: "bar")
       end
     end
