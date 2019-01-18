@@ -66,19 +66,19 @@ module SmashTheState
         step.error_handler = block
       end
 
-      def middleware_class(state)
-        middleware_class_block.call(state).constantize
+      def middleware_class(state, original_state = nil)
+        middleware_class_block.call(state, original_state).constantize
       rescue NameError, NoMethodError
         nil
       end
 
       def add_middleware_step(step_name, options = {})
         step = Operation::Step.new step_name, options do |state, original_state|
-          if middleware_class(state).nil?
+          if middleware_class(state, original_state).nil?
             # no-op
             state
           else
-            middleware_class(state).send(step_name, state, original_state)
+            middleware_class(state, original_state).send(step_name, state, original_state)
           end
         end
 
