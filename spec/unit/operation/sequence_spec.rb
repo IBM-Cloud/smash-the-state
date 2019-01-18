@@ -178,7 +178,7 @@ describe SmashTheState::Operation::Sequence do
 
     context "with a middleware class defined" do
       let!(:middleware_class) do
-        class SequenceSpecBarMiddleware
+        class SequenceSpecMiddleware
           def self.extra_step(state, original_state)
             state.merge(original_state)
           end
@@ -186,8 +186,8 @@ describe SmashTheState::Operation::Sequence do
       end
 
       before do
-        instance.middleware_class_block = proc do |_state, original_state|
-          "SequenceSpec#{original_state[:foo].classify}Middleware"
+        instance.middleware_class_block = proc do |_state, _original_state|
+          "SequenceSpecMiddleware"
         end
 
         instance.add_step :inline_step do |_state|
@@ -195,6 +195,15 @@ describe SmashTheState::Operation::Sequence do
         end
 
         instance.add_middleware_step :extra_step
+      end
+
+      it "block receives both the state and original state" do
+        instance.middleware_class_block = proc do |state, original_state|
+          expect(state).to eq(baz: "bing")
+          expect(original_state).to eq(foo: "bar")
+        end
+
+        instance.call(foo: "bar")
       end
 
       it "delegates the step to the middleware class" do
