@@ -12,6 +12,8 @@ Metrics/ClassLength:
   Max: 200
 Metrics/AbcSize:
   Max: 25
+Metrics/BlockLength:
+  Enabled: false
 
 Documentation:
   Enabled: false
@@ -19,22 +21,20 @@ Documentation:
 Lint/UselessAccessModifier:
   Enabled: false
 
-Style/Encoding:
-  Enabled: true
+Layout/AlignParameters:
+  Enabled: false
+Layout/DotPosition:
+  EnforcedStyle: trailing
+Layout/MultilineMethodCallIndentation:
+  Enabled: false
+
 Style/MultilineTernaryOperator:
   Enabled: false
 Style/Encoding:
   Enabled: false
-Style/AlignParameters:
-  Enabled: false
 Style/ClassAndModuleChildren:
   Enabled: false
 Style/StringLiterals:
-  Enabled: false
-
-Style/DotPosition:
-  EnforcedStyle: trailing
-Style/MultilineMethodCallIndentation:
   Enabled: false
 
 # Rails

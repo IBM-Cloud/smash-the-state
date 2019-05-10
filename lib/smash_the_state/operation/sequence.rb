@@ -66,11 +66,13 @@ module SmashTheState
         step.error_handler = block
       end
 
+      # rubocop:disable Lint/ShadowedException
       def middleware_class(state, original_state = nil)
         middleware_class_block.call(state, original_state).constantize
       rescue NameError, NoMethodError
         nil
       end
+      # rubocop:enable Lint/ShadowedException
 
       def add_middleware_step(step_name, options = {})
         step = Operation::Step.new step_name, options do |state, original_state|
@@ -106,6 +108,7 @@ module SmashTheState
         e.state
       rescue Operation::Error => e
         raise e if current_step.error_handler.nil?
+
         current_step.error_handler.call(e.state, original_state)
       end
     end

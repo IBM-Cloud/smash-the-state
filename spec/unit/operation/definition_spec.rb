@@ -51,7 +51,7 @@ describe "SmashTheState::Operation::Definition" do
       expect(
         # wheeeeeee
         subject.attributes_registry[:location][1][:ref].attributes_registry.keys
-      ).to eq([:postal_code, :lat, :lon])
+      ).to eq(%i[postal_code lat lon])
     end
   end
 end
