@@ -83,6 +83,7 @@ describe SmashTheState::Operation do
         klass.step :change_state_to_something_else2 do |state, original_state|
           # state should be changed by the previous step
           raise "should not hit this" unless state == :something_else
+
           # and switch the state back to the original state, which should be
           # available via the second argument to the block
           original_state

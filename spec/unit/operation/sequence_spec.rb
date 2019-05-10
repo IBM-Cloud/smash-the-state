@@ -106,7 +106,7 @@ describe SmashTheState::Operation::Sequence do
         expect(instance.steps.length).to eq(1)
         expect(step).to be_a(SmashTheState::Operation::Step)
         expect(step.name).to eq(:new_step)
-        expect(step.implementation.call([:existing])).to eq([:existing, :step_added])
+        expect(step.implementation.call(%i[existing])).to eq(%i[existing step_added])
       end
     end
 
@@ -246,7 +246,7 @@ describe SmashTheState::Operation::Sequence do
     it "returns a new sequence cut to the specified length from the " \
        "specified start" do
       sliced = instance.slice(1, 3)
-      expect(sliced.steps.map(&:name)).to eq([:two, :three, :four])
+      expect(sliced.steps.map(&:name)).to eq(%i[two three four])
 
       # doesn't mutate the original
       expect(instance.steps.length).to eq(5)
