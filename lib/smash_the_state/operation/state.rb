@@ -17,9 +17,9 @@ module SmashTheState
       class << self
         attr_accessor :representer
 
-        def build(&block)
+        def build(params = nil, &block)
           Class.new(self).tap do |k|
-            k.class_eval(&block)
+            k.class_exec(params, &block)
           end
         end
 

@@ -35,6 +35,15 @@ module SmashTheState
         @state_class = Operation::State.build(&block)
       end
 
+      def dynamic_schema(&block)
+        sequence.add_step :_dynamic_schema do |params|
+          Operation::State.build(params, &block).new(params)
+        end
+
+        # make sure that the dynamic schema step that we just added above is always first
+        sequence.steps.unshift sequence.steps.pop
+      end
+
       def step(step_name, options = {}, &block)
         sequence.add_step(step_name, options, &block)
       end
