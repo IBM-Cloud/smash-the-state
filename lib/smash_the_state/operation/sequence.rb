@@ -42,12 +42,20 @@ module SmashTheState
       end
 
       def add_step(step_name, options = {}, &block)
-        # mulitple validation steps are okay but otherwise step names need to be unique
-        if step_name != :validate && !steps_for_name(step_name).empty?
+        # steps need to be unique
+        unless steps_for_name(step_name).empty?
           raise "an operation step named #{step_name.inspect} already exists"
         end
 
         @steps << Step.new(step_name, options, &block)
+      end
+
+      def add_validation_step(options = {}, &block)
+        step = steps_for_name(:validate).first ||
+               SmashTheState::Operation::ValidationStep.new(options)
+
+        step.add_implementation(&block)
+        @steps = @steps | [step]
       end
 
       # returns steps named the specified name. it's generally bad form to have mulitple
@@ -95,14 +103,18 @@ module SmashTheState
         original_state = state.dup
         current_step = nil
 
-        steps_to_run.reduce(state) do |memo, step|
-          current_step = step
+        steps_to_run.reduce(state) do |memo, s|
+          current_step = s
 
           # we're gonna pass the state from the previous step into the implementation as
           # 'memo', but for convenience, we'll also always pass the original state into
           # the implementation as 'original_state' so that no matter what you can get to
           # your original input
-          step.implementation.call(memo, original_state, run_options)
+          if s.name == :validate
+            s.validate!(memo)
+          else
+            s.implementation.call(memo, original_state, run_options)
+          end
         end
       rescue Operation::State::Invalid => e
         e.state

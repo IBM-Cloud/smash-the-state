@@ -137,6 +137,20 @@ describe SmashTheState::Operation::Sequence do
     end
   end
 
+  describe "#add_validation_step" do
+    let!(:instance) { subject.new }
+    let!(:implementations) { 3.times.map { lambda{} } }
+
+    before do
+      implementations.each { |i| instance.add_validation_step(&i) }
+    end
+
+    it "adds all the validation implementations to the validate step" do
+      validate_step = instance.steps_for_name(:validate).first
+      expect(validate_step.implementations).to eq(implementations)
+    end
+  end
+
   describe "#middleware_class" do
     let!(:instance) { subject.new }
 

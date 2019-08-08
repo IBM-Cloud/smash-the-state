@@ -1,6 +1,7 @@
 require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
+require_relative 'operation/validation_step'
 require_relative 'operation/state'
 require_relative 'operation/dry_run'
 require_relative 'operation/state_type'
@@ -65,12 +66,12 @@ module SmashTheState
         sequence.add_middleware_step(step_name, options)
       end
 
-      def validate(&block)
+      def validate(options = {}, &block)
         # when we add a validation step, all proceeding steps must not produce
         # side-effects (subsequent steps are case-by-case)
         sequence.mark_as_side_effect_free!
-        step :validate, side_effect_free: true do |state|
-          Operation::State.eval_validation_directives_block(state, &block)
+        sequence.add_validation_step(options) do |state|
+          Operation::State.extend_validation_directives_block(state, &block)
         end
       end
 
@@ -78,7 +79,7 @@ module SmashTheState
         # when we add a validation step, all proceeding steps must not produce
         # side-effects (subsequent steps are case-by-case)
         sequence.mark_as_side_effect_free!
-        step :validate, side_effect_free: true do |state, original_state|
+        step :custom_validation do |state, original_state|
           Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end

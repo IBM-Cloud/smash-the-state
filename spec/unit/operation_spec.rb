@@ -103,6 +103,63 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "self#override_step" do
+    let!(:step_name) { :override_me }
+    let!(:step_options) { {some: :option} }
+    let!(:implementation) do
+      Proc.new do
+        :success
+      end
+    end
+    let!(:token_result) { double }
+
+    it "delegates to the sequence implementation of :override_step" do
+      expect(klass.sequence).to receive(:override_step).with(step_name, step_options, &implementation).and_return(token_result)
+      expect(klass.override_step(step_name, step_options, &implementation)).to eq(token_result)
+    end
+  end
+
+  describe "inheritance" do
+    let!(:parent) do
+      Class.new(SmashTheState::Operation).tap do |k|
+        k.class_eval do
+          schema do
+            attribute :pants, :string
+          end
+
+          step :one do |state|
+            state << :one
+          end
+
+          step :two do |state|
+            state << :two
+          end
+        end
+      end
+    end
+
+    let!(:child) do
+      Class.new(parent).tap do |k|
+        k.class_eval do
+          step :three do
+            state << :three
+          end
+        end
+      end
+    end
+
+    it "brings the steps over from the parent operation" do
+      expect(parent.sequence.steps.length).to eq(2)
+      expect(child.sequence.steps.length).to eq(3)
+      expect(child.sequence.steps[0..1]).to eq(parent.sequence.steps[0..1])
+    end
+
+    it "duplicates the state class from the parent operation" do
+      expect(child.state_class).to_not eq(parent.state_class)
+      expect(child.state_class.attributes_registry).to eq({:pants=>[:string, {}]})
+    end
+  end
+
   describe "self#dry_run_sequence" do
     context "with a custom dry run sequence block" do
       before do
