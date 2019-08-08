@@ -1,6 +1,9 @@
 module SmashTheState
   class Operation
     class Sequence
+      class BadOverride < StandardError; end
+      class StepConflict < StandardError; end
+
       attr_accessor :middleware_class_block
       attr_reader :steps, :run_options
 
@@ -44,7 +47,10 @@ module SmashTheState
       def add_step(step_name, options = {}, &block)
         # steps need to be unique
         unless steps_for_name(step_name).empty?
-          raise "an operation step named #{step_name.inspect} already exists"
+          raise(
+            StepConflict,
+            "an operation step named #{step_name.inspect} already exists"
+          )
         end
 
         @steps << Step.new(step_name, options, &block)
@@ -55,7 +61,21 @@ module SmashTheState
                SmashTheState::Operation::ValidationStep.new(options)
 
         step.add_implementation(&block)
-        @steps = @steps | [step]
+        @steps |= [step]
+      end
+
+      def override_step(step_name, options = {}, &block)
+        step = steps_for_name(step_name).first
+
+        if step.nil?
+          raise(
+            BadOverride,
+            "overriding step #{step_name.inspect} failed because it does " \
+            "not exist"
+          )
+        end
+
+        @steps[@steps.index(step)] = Step.new(step_name, options, &block)
       end
 
       # returns steps named the specified name. it's generally bad form to have mulitple

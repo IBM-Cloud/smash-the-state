@@ -1,7 +1,7 @@
 module SmashTheState
   class Operation
     class ValidationStep < Step
-      attr_reader :implementations
+      attr_accessor :implementations
 
       def initialize(options = {})
         @name            = :validate
@@ -12,7 +12,7 @@ module SmashTheState
       end
 
       def add_implementation(&block)
-        tap do |s|
+        tap do
           @implementations << block
         end
       end
@@ -20,7 +20,7 @@ module SmashTheState
       def implementation
         blocks = @implementations
 
-        Proc.new do
+        proc do
           # self here should be a state
           blocks.reduce(self) do |memo, i|
             memo.class_eval(&i)
@@ -32,6 +32,14 @@ module SmashTheState
         state.tap do
           SmashTheState::Operation::State.
             eval_validation_directives_block(state, &implementation)
+        end
+      end
+
+      def dup
+        # it's not enough to duplicate the step, we should also duplicate our
+        # implementations. otherwise the list of implementations will be shared
+        super.tap do |s|
+          s.implementations = s.implementations.dup
         end
       end
     end

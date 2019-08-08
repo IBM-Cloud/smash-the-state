@@ -137,9 +137,52 @@ describe SmashTheState::Operation::Sequence do
     end
   end
 
+  describe "#override_step" do
+    let!(:instance) { subject.new }
+
+    before do
+      instance.add_step :one do |state|
+        state << :one
+      end
+
+      instance.add_step :two do |state|
+        state << :two
+      end
+
+      instance.add_step :three do |state|
+        state << :three
+      end
+    end
+
+    context "when no step by the given name exists" do
+      it "raises an exception" do
+        begin
+          instance.override_step :four do
+          end
+
+          raise "should not reach this"
+        rescue SmashTheState::Operation::Sequence::BadOverride => e
+          expect(
+            e.to_s
+          ).to eq("overriding step :four failed because it does not exist")
+        end
+      end
+    end
+
+    context "with a pre-existing step by that name" do
+      it "replaces the step in the position in which it originally appeared" do
+        instance.override_step :two do |state|
+          state << :pants
+        end
+
+        expect(instance.call([])).to eq(%i[one pants three])
+      end
+    end
+  end
+
   describe "#add_validation_step" do
     let!(:instance) { subject.new }
-    let!(:implementations) { 3.times.map { lambda{} } }
+    let!(:implementations) { 3.times.map { -> {} } }
 
     before do
       implementations.each { |i| instance.add_validation_step(&i) }

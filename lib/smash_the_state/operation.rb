@@ -39,6 +39,10 @@ module SmashTheState
         sequence.add_step(step_name, options, &block)
       end
 
+      def override_step(step_name, options = {}, &block)
+        sequence.override_step(step_name, options, &block)
+      end
+
       def error(*steps, &block)
         steps.each do |step_name|
           sequence.add_error_handler_for_step(step_name, &block)
@@ -107,6 +111,17 @@ module SmashTheState
         state = state_class && state_class.new(params)
         sequence_to_run.call(state || params)
       end
+    end
+
+    def self.inherited(child_class)
+      # all steps from the parent first need to be cloned
+      new_steps = sequence.steps.map(&:dup)
+
+      # and then we add them to the child's empty sequence
+      child_class.sequence.steps.concat(new_steps)
+
+      # also copy the state class over
+      child_class.instance_variable_set(:@state_class, state_class && state_class.dup)
     end
   end
 end
