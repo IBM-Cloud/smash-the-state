@@ -1,6 +1,7 @@
 require_relative 'operation/error'
 require_relative 'operation/sequence'
 require_relative 'operation/step'
+require_relative 'operation/validation_step'
 require_relative 'operation/state'
 require_relative 'operation/dry_run'
 require_relative 'operation/state_type'
@@ -38,6 +39,10 @@ module SmashTheState
         sequence.add_step(step_name, options, &block)
       end
 
+      def override_step(step_name, options = {}, &block)
+        sequence.override_step(step_name, options, &block)
+      end
+
       def error(*steps, &block)
         steps.each do |step_name|
           sequence.add_error_handler_for_step(step_name, &block)
@@ -65,12 +70,12 @@ module SmashTheState
         sequence.add_middleware_step(step_name, options)
       end
 
-      def validate(&block)
+      def validate(options = {}, &block)
         # when we add a validation step, all proceeding steps must not produce
         # side-effects (subsequent steps are case-by-case)
         sequence.mark_as_side_effect_free!
-        step :validate, side_effect_free: true do |state|
-          Operation::State.eval_validation_directives_block(state, &block)
+        sequence.add_validation_step(options) do |state|
+          Operation::State.extend_validation_directives_block(state, &block)
         end
       end
 
@@ -78,7 +83,7 @@ module SmashTheState
         # when we add a validation step, all proceeding steps must not produce
         # side-effects (subsequent steps are case-by-case)
         sequence.mark_as_side_effect_free!
-        step :validate, side_effect_free: true do |state, original_state|
+        step :custom_validation do |state, original_state|
           Operation::State.eval_custom_validator_block(state, original_state, &block)
         end
       end
@@ -106,6 +111,17 @@ module SmashTheState
         state = state_class && state_class.new(params)
         sequence_to_run.call(state || params)
       end
+    end
+
+    def self.inherited(child_class)
+      # all steps from the parent first need to be cloned
+      new_steps = sequence.steps.map(&:dup)
+
+      # and then we add them to the child's empty sequence
+      child_class.sequence.steps.concat(new_steps)
+
+      # also copy the state class over
+      child_class.instance_variable_set(:@state_class, state_class && state_class.dup)
     end
   end
 end

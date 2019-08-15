@@ -48,6 +48,12 @@ module SmashTheState
           end
         end
 
+        def extend_validation_directives_block(state, &block)
+          state.tap do |s|
+            s.class_eval(&block)
+          end
+        end
+
         # for non-ActiveModel states we will just evaluate the block as a validator
         def eval_custom_validator_block(state, original_state = nil)
           yield(state, original_state)

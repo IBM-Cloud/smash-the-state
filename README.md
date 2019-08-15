@@ -159,6 +159,69 @@ class CreateDatabase < SmashTheState::Operation
 end
 ```
 
+## Inheritance-like Behavior
+
+Smash is a library that generally follows the functional approach and you should focus on using that approach when using it. However, there are times when sprinkling a dash of inheritance into the mix can make your life easier.
+
+When using the inheritance pattern, all validation blocks are evaluated together and are run together as one big validation step. The parent class' schema is copied to the child class. All steps are copied to the child class, but individual steps may be overridden using `override_step`. Overridden steps are run in the same step index in which they were originally defined in the parent sequence.
+
+``` ruby
+class CreateOperation < SmashTheState::Operation
+  schema do
+    attribute :version, :string
+    attribute :name,    :string
+  end
+
+  validate do
+    validates_presence_of :name
+  end
+
+  step :download_image do |state|
+    GenericImage.download(name)
+  end
+
+  step :create do |state|
+    Deployment.create(state.to_hash)
+  end
+
+  step :set_up_billing do |deployment|
+    Billing.charge_for_deployment(deployment)
+
+    deployment
+  end
+end
+
+class RestoreOperation < CreateOperation
+  # we get the parent class' schema for free when we inherit. if you want to extend the
+  # schema in child classes, I recommend breaking out your schema into modules
+
+  # the validation of CreateOperation will be evaluated at the same time as this following
+  # block. in other words, not only will :name have to be present, but for restoration,
+  # the name has to be the name of a known source image
+  validate do
+    validate :source_image_exists
+
+    def source_image_exists
+      unless SourceImage.exist?(name)
+        add_error(:name, "is not a restorable image")
+      end
+    end
+  end
+
+  # steps from the parent class are copied over in order. you can override specific steps
+  # in the child class
+
+  # ...download_image runs
+
+  override_step :create do |state|
+    # we're going to diverge from create by "restoring" an image rather than "creating" an image
+    Deployment.restore(state.to_hash)
+  end
+
+  # ... set_up_billing runs
+end
+```
+
 ## Representation
 
 Let's say you want to represent the state of the operation, wrapped in a class that defines some `as_*` and `to_*` methods. You can do this with a `represent` step.

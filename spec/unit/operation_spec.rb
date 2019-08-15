@@ -103,6 +103,94 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "self#override_step" do
+    let!(:step_name) { :override_me }
+    let!(:step_options) { { some: :option } }
+    let!(:implementation) do
+      proc do
+        :success
+      end
+    end
+    let!(:token_result) { double }
+
+    it "delegates to the sequence implementation of :override_step" do
+      expect(
+        klass.sequence
+      ).to receive(:override_step).with(
+        step_name,
+        step_options,
+        &implementation
+      ).and_return(token_result)
+
+      expect(klass.override_step(step_name, step_options, &implementation)).to eq(token_result)
+    end
+  end
+
+  describe "inheritance" do
+    let!(:parent) do
+      Class.new(SmashTheState::Operation).tap do |k|
+        k.class_eval do
+          schema do
+            attribute :countup, :string
+          end
+
+          validate do
+            validates_presence_of :countup
+          end
+
+          step :one do |state|
+            state.countup += "one"
+            state
+          end
+
+          step :two do |state|
+            state.countup += "two"
+            state
+          end
+        end
+      end
+    end
+
+    let!(:child) do
+      Class.new(parent).tap do |k|
+        k.class_eval do
+          override_step :two do |state|
+            state.countup += "oneandahalf"
+            state
+          end
+
+          validate do
+            validates_length_of :countup, maximum: 5
+          end
+
+          step :three do |state|
+            state.countup += "three"
+            state
+          end
+        end
+      end
+    end
+
+    it "duplicates steps from the parent operation, allows overrides" do
+      expect(parent.sequence.steps.length).to eq(3)
+      expect(child.sequence.steps.length).to eq(4)
+      expect(child.call(countup: "zero").countup).to eq("zerooneoneandahalfthree")
+    end
+
+    it "duplicates the state class from the parent operation" do
+      expect(child.state_class).to_not eq(parent.state_class)
+      expect(child.state_class.attributes_registry).to eq(countup: [:string, {}])
+    end
+
+    it "merges the validation blocks" do
+      too_large = child.call(countup: "thisistoolarge")
+      expect(too_large.errors[:countup]).to eq(["is too long (maximum is 5 characters)"])
+
+      too_large = child.call(countup: "")
+      expect(too_large.errors[:countup]).to eq(["can't be blank"])
+    end
+  end
+
   describe "self#dry_run_sequence" do
     context "with a custom dry run sequence block" do
       before do

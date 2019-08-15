@@ -13,7 +13,7 @@ module SmashTheState
           referenced_steps = wet_sequence.steps_for_name(step_name)
 
           if block
-            dry_sequence.add_step(step_name, side_effect_free: true, &block)
+            add_dry_run_step(step_name, &block)
             return
           end
 
@@ -27,11 +27,17 @@ module SmashTheState
             # we're gonna copy the implementation verbatim but add a new step marked as
             # side-effect-free, because if the step was added to the dry run sequence it
             # must be assumed to be side-effect-free
-            dry_sequence.add_step(
-              step_name,
-              side_effect_free: true,
-              &referenced_step.implementation
-            )
+            add_dry_run_step(step_name, &referenced_step.implementation)
+          end
+        end
+
+        private
+
+        def add_dry_run_step(step_name, &block)
+          if step_name == :validate
+            dry_sequence.add_validation_step(&block)
+          else
+            dry_sequence.add_step(step_name, side_effect_free: true, &block)
           end
         end
       end
