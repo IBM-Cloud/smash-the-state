@@ -7,6 +7,13 @@ module SmashTheState
         def initialize(wet_sequence)
           @wet_sequence = wet_sequence
           @dry_sequence = Operation::Sequence.new
+
+          # in the case of a dynamic schema, front-load it as the first step
+          dynamic_schema_step = @wet_sequence.dynamic_schema_step
+
+          return if dynamic_schema_step.nil?
+
+          step(dynamic_schema_step.name, &dynamic_schema_step.implementation)
         end
 
         def step(step_name, &block)

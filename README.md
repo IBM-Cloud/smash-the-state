@@ -96,24 +96,23 @@ class CreateAnalyticsOperation < SmashTheState::Operation
 end
 ```
 
-## Dynamic State Classes (built at runtime)
+## Dynamic Schemas (built at runtime)
 
-Maybe your operation needs a more flexible schema than a static state class can provide. If you need your state class to be evaluated at runtime, you can omit a schema block and the raw params will be passed in as the initial state. From there you can create whatever state class you desire from inside the first step.
+Maybe your operation needs a more flexible schema than a static state class can provide. Maybe you need to base your schema on some other data model that isn't available at the time the class is evaluated. If you need your state class to be evaluated at runtime, you can specify `dynamic_schema` with a block. The raw params hash will be passed in as the initial state. From there you can create whatever state class you desire at runtime. Be careful with this because this can quickly get out of hand. If you find yourself using dynamic schemas frequently, you may actually want distinct operations with static schemas.
 
 ```ruby
-class MyOperation < SmashTheState::Operation
-  step :custom_state_class do |params|
-    c = Operation::State.build do
-      # create whatever state class you need at runtime
-      attribute :some_name, :some_type
+class BillingStuff < SmashTheState::Operation
+  dynamic_schema do |params|
+    # let's say we want to base our schema on an external service.
+    # we can call the service and build our schema off of the keys it returns
+    # let's say it's something like {name: "...", id: "...", is_paid: "..."}
+    BillingService.get_billing_things.keys do |key|
+      attribute key, :string
     end
-
-    c.new(params)
   end
 
-  step :do_more_things do |state, params|
-    # params will be the initial params
-    # ... and so on
+  step :do_more_things do |state|
+    # ... we receive a state with name, id, and is_paid attributes ...
   end
 end
 ```

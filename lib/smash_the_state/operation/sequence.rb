@@ -115,12 +115,26 @@ module SmashTheState
         @steps << step
       end
 
+      def dynamic_schema?
+        dynamic_schema_step.nil? == false
+      end
+
+      def dynamic_schema_step
+        steps_for_name(:_dynamic_schema).first
+      end
+
       private
+
+      def make_original_state(state)
+        return dynamic_schema_step.implementation.call(state, state, run_options) if dynamic_schema?
+
+        state.dup
+      end
 
       def run_steps(steps_to_run, state)
         # retain a copy of the original state so that we can refer to it for posterity as
         # the operation state gets mutated over time
-        original_state = state.dup
+        original_state = make_original_state(state)
         current_step = nil
 
         steps_to_run.reduce(state) do |memo, s|

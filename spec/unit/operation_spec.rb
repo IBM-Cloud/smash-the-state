@@ -191,6 +191,35 @@ describe SmashTheState::Operation do
     end
   end
 
+  describe "self#dynamic_schema" do
+    let!(:klass) do
+      Class.new(SmashTheState::Operation).tap do |k|
+        k.class_eval do
+          dynamic_schema do |params|
+            attribute "#{params[:adjective]}_#{params[:animal]}", :string
+          end
+
+          step :step_one do |state|
+            state.fat_ocelot = "maybe"
+            state
+          end
+
+          step :step_two do |state, original_state|
+            [state, original_state]
+          end
+        end
+      end
+    end
+
+    it "produces an 'inline' schema that is evaluated each time the operation "\
+       "runs while passing the 'original' dynamic state onto the next step" do
+      state, original_state = klass.call(adjective: "fat", animal: "ocelot", fat_ocelot: "no")
+
+      expect(state.fat_ocelot).to eq("maybe")
+      expect(original_state.fat_ocelot).to eq("no")
+    end
+  end
+
   describe "self#dry_run_sequence" do
     context "with a custom dry run sequence block" do
       before do
