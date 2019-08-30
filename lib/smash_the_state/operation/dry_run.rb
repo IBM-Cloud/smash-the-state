@@ -10,9 +10,10 @@ module SmashTheState
 
           # in the case of a dynamic schema, front-load it as the first step
           dynamic_schema_step = @wet_sequence.dynamic_schema_step
-          unless dynamic_schema_step.nil?
-            step(dynamic_schema_step.name, &dynamic_schema_step.implementation)
-          end
+
+          return if dynamic_schema_step.nil?
+
+          step(dynamic_schema_step.name, &dynamic_schema_step.implementation)
         end
 
         def step(step_name, &block)

@@ -127,6 +127,7 @@ module SmashTheState
 
       def make_original_state(state)
         return dynamic_schema_step.implementation.call(state, state, run_options) if dynamic_schema?
+
         state.dup
       end
 

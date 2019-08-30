@@ -199,7 +199,7 @@ describe SmashTheState::Operation do
             attribute "#{params[:adjective]}_#{params[:animal]}", :string
           end
 
-          step :step_one do |state, original_state|
+          step :step_one do |state|
             state.fat_ocelot = "maybe"
             state
           end
@@ -217,7 +217,7 @@ describe SmashTheState::Operation do
 
       expect(state.fat_ocelot).to eq("maybe")
       expect(original_state.fat_ocelot).to eq("no")
-     end
+    end
   end
 
   describe "self#dry_run_sequence" do
