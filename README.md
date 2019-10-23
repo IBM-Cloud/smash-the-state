@@ -3,6 +3,8 @@
 # Smash the State
 A useful utility for transforming state that provides step sequencing, middleware, and validation.
 
+Inspired by [Arpeggiate](https://github.com/onyxrev/arpeggiate), an Elixir operation library by [@onyxrev](https://github.com/onyxrev).
+
 # Example
 
 ``` ruby
@@ -317,7 +319,7 @@ end
 
 ## Continuation
 
-Smash the State operations are functional, so they don't support inheritance. In lieu of inheritance, you may use `continues_from`, which frontloads an existing operation in front of the operation being defined. It feeds the state result of the first operation into the first step of the second.
+Smash the State operations can be chained. To simplify this, you may use the `continues_from` helper, which frontloads an existing operation in front of the operation being defined. It feeds the state result of the first operation into the first step of the second.
 
 ``` ruby
 class SecondOperation < SmashTheState::Operation
