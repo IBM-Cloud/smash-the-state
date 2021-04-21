@@ -61,6 +61,7 @@ module SmashTheState
                 sequence.side_effect_free
               end
 
+        seq.run_options[:dry] = true
         run_sequence(seq, params)
       end
       alias dry_call dry_run
