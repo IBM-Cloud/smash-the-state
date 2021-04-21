@@ -236,8 +236,8 @@ describe SmashTheState::Operation do
   describe "self#dry_run_sequence" do
     context "with a custom dry run sequence block" do
       before do
-        klass.step :step_one do |state|
-          state.name = state.name + " one"
+        klass.step :step_one do |state, _original_state, run_options|
+          state.name = state.name + " one " + run_options.to_json
           state
         end
 
@@ -266,16 +266,17 @@ describe SmashTheState::Operation do
       end
 
       it "provides a custom sequence for the dry run that " \
-         "contains only side-effect free steps" do
+         "contains only side-effect free steps, and specifies " \
+         "whether the run is dry the run options" do
         result = klass.call(name: "Sam")
-        expect(result.name).to eq("Sam one two three")
+        expect(result.name).to eq("Sam one {\"dry\":false} two three")
 
         expect(
           klass.dry_run_sequence.steps.all?(&:side_effect_free?)
         ).to eq(true)
 
         dry_result = klass.dry_run(name: "Sam")
-        expect(dry_result.name).to eq("Sam one custom")
+        expect(dry_result.name).to eq("Sam one {\"dry\":true} custom")
       end
     end
   end

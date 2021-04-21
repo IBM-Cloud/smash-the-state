@@ -32,7 +32,6 @@ module SmashTheState
       # return a copy without the steps that produce side-effects
       def side_effect_free
         dup.tap do |seq|
-          seq.run_options[:dry] = true
           seq.instance_eval do
             @steps = seq.steps.select(&:side_effect_free?)
           end
