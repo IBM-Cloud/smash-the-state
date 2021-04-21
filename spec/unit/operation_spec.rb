@@ -120,9 +120,9 @@ describe SmashTheState::Operation do
         step_name,
         step_options,
         &implementation
-      ).and_return(token_result)
+      )
 
-      expect(klass.override_step(step_name, step_options, &implementation)).to eq(token_result)
+      klass.override_step(step_name, step_options, &implementation)
     end
   end
 
@@ -146,6 +146,15 @@ describe SmashTheState::Operation do
           step :two do |state|
             state.countup += "two"
             state
+          end
+
+          dry_run_sequence do
+            step :one
+            step :two
+            step :three do |state|
+              state.countup += "blar"
+              state
+            end
           end
         end
       end
@@ -188,6 +197,10 @@ describe SmashTheState::Operation do
 
       too_large = child.call(countup: "")
       expect(too_large.errors[:countup]).to eq(["can't be blank"])
+    end
+
+    it "populates the dry run sequence and honors overridden steps" do
+      expect(child.dry_run(countup: "zero").countup).to eq("zerooneoneandahalfblar")
     end
   end
 

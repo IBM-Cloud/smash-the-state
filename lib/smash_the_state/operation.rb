@@ -50,6 +50,11 @@ module SmashTheState
 
       def override_step(step_name, options = {}, &block)
         sequence.override_step(step_name, options, &block)
+
+        # also override the dry run step
+        return if dry_run_sequence.steps_for_name(step_name).length.zero?
+
+        dry_run_sequence.override_step(step_name, options, &block)
       end
 
       def error(*steps, &block)
@@ -131,6 +136,9 @@ module SmashTheState
 
       # also copy the state class over
       child_class.instance_variable_set(:@state_class, state_class && state_class.dup)
+
+      # also copy the dry run sequence
+      child_class.dry_run_sequence.steps.concat(dry_run_sequence.steps.map(&:dup))
     end
   end
 end
