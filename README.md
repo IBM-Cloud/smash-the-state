@@ -127,7 +127,7 @@ Let's say you have two database types: `WhiskeyDB` and `AbsintheDB`, each of whi
 
 ``` ruby
 class WhiskeyDBCreateMiddleware
-  def create_environment(state)
+  def self.create_environment(state)
     # do whiskey things
   end
 end
@@ -136,7 +136,7 @@ end
 
 ``` ruby
 class AbsintheDBCreateMiddleware
-  def create_environment(state)
+  def self.create_environment(state)
     # do absinthe things
   end
 end
