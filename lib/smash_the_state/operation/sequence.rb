@@ -93,13 +93,20 @@ module SmashTheState
         step.error_handler = block
       end
 
-      # rubocop:disable Lint/ShadowedException
       def middleware_class(state, original_state = nil)
-        middleware_class_block.call(state, original_state).constantize
-      rescue NameError, NoMethodError
-        nil
+        klass = middleware_class_block.call(state, original_state)
+
+        case klass
+        when Module, Class
+          klass
+        else
+          begin
+            klass.constantize if klass.respond_to?(:constantize)
+          rescue NameError
+            nil
+          end
+        end
       end
-      # rubocop:enable Lint/ShadowedException
 
       def add_middleware_step(step_name, options = {})
         step = Operation::Step.new step_name, options do |state, original_state|
@@ -127,7 +134,9 @@ module SmashTheState
       def make_original_state(state)
         return dynamic_schema_step.implementation.call(state, state, run_options) if dynamic_schema?
 
-        state.dup
+        state.
+          dup.
+          freeze # don't allow any modifications to the original state
       end
 
       def run_steps(steps_to_run, state)

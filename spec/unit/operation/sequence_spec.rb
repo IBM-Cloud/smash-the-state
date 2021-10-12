@@ -204,28 +204,40 @@ describe SmashTheState::Operation::Sequence do
     end
 
     context "with a middleware_class_block" do
-      it "runs the middleware_class_block, passes in the state, constantizes" do
-        expect(instance.middleware_class("String")).to eq(String)
+      context "that returns a string" do
+        it "runs the middleware_class_block, passes in the state, constantizes" do
+          expect(instance.middleware_class("String")).to eq(String)
+        end
+      end
+
+      context "that returns a constant" do
+        before do
+          instance.middleware_class_block = proc do |state|
+            state
+          end
+        end
+
+        context "that is a class" do
+          let!(:klass) { Class.new }
+
+          it "runs the middleware_class_block, passes in the state" do
+            expect(instance.middleware_class(klass)).to eq(klass)
+          end
+        end
+
+        context "that returns a module" do
+          let!(:modyule) { Module.new }
+
+          it "runs the middleware_class_block, passes in the state" do
+            expect(instance.middleware_class(modyule)).to eq(modyule)
+          end
+        end
       end
     end
 
     context "with a NameError" do
       it "returns nil" do
         expect(instance.middleware_class("Whazzat")).to eq(nil)
-      end
-    end
-
-    context "with a NoMethodError" do
-      let!(:state) { double }
-
-      before do
-        allow(state).to receive(:to_s) do
-          raise NoMethodError
-        end
-      end
-
-      it "returns nil" do
-        expect(instance.middleware_class(state)).to eq(nil)
       end
     end
   end
@@ -254,10 +266,11 @@ describe SmashTheState::Operation::Sequence do
         instance.add_middleware_step :extra_step
       end
 
-      it "block receives both the state and original state" do
+      it "block receives both the state and frozen original state" do
         instance.middleware_class_block = proc do |state, original_state|
           expect(state).to eq(baz: "bing")
           expect(original_state).to eq(foo: "bar")
+          expect(original_state.frozen?).to eq(true)
         end
 
         instance.call(foo: "bar")
