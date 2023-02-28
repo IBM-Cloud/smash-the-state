@@ -29,11 +29,11 @@ module SmashTheState
         def schema(key, options = {}, &block)
           attribute key,
                     :state_for_smashing,
-                    options.merge(
+                    **(options.merge(
                       # allow for schemas to be provided inline *or* as a reference to a
                       # type definition
                       schema: attribute_options_to_ref_block(options) || block
-                    )
+                    ))
         end
 
         # for ActiveModel states we will treat the block as a collection of ActiveModel
@@ -43,7 +43,7 @@ module SmashTheState
             # each validate block should be a "fresh start" and not interfere with the
             # previous blocks
             s.class.clear_validators!
-            s.class_eval(&block)
+            s.class.class_eval(&block)
             s.validate || invalid!(s)
           end
         end

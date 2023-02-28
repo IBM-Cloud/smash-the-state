@@ -18,5 +18,5 @@ Gem::Specification.new do |s|
                 "README.md"]
 
   s.add_dependency "active_model_attributes", "~> 1.2.0"
-  s.add_dependency "activesupport", ">= 6.0.3.1"
+  s.add_dependency "activesupport", ">= 6.0.0"
 end
