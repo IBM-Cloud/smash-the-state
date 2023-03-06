@@ -237,17 +237,17 @@ describe SmashTheState::Operation do
     context "with a custom dry run sequence block" do
       before do
         klass.step :step_one do |state, _original_state, run_options|
-          state.name = state.name + " one " + run_options.to_json
+          state.name = "#{state.name} one #{run_options.to_json}"
           state
         end
 
         klass.step :step_two do |state|
-          state.name = state.name + " two"
+          state.name = "#{state.name} two"
           state
         end
 
         klass.step :step_three do |state|
-          state.name = state.name + " three"
+          state.name = "#{state.name} three"
           state
         end
 
@@ -257,7 +257,7 @@ describe SmashTheState::Operation do
 
           # we'll provide a custom implementation of this step
           step :step_two do |state|
-            state.name = state.name + " custom"
+            state.name = "#{state.name} custom"
             state
           end
 
@@ -341,7 +341,7 @@ describe SmashTheState::Operation do
 
     context "when the policy permits" do
       it "newifies the policy class with the state, runs the method" do
-        state = klass.call(current_user: current_user)
+        state = klass.call(current_user:)
         expect(state.name).to eq("allowed")
       end
     end
@@ -352,13 +352,11 @@ describe SmashTheState::Operation do
       end
 
       it "raises an exception, embeds the policy instance" do
-        begin
-          klass.call(current_user: current_user)
-          raise "should not hit this"
-        rescue SmashTheState::Operation::NotAuthorized => e
-          expect(e.policy_instance).to be_a(@policy_klass)
-          expect(e.policy_instance.user).to eq(current_user)
-        end
+        klass.call(current_user:)
+        raise "should not hit this"
+      rescue SmashTheState::Operation::NotAuthorized => e
+        expect(e.policy_instance).to be_a(@policy_klass)
+        expect(e.policy_instance.user).to eq(current_user)
       end
     end
   end
@@ -434,7 +432,7 @@ describe SmashTheState::Operation do
     context "with a validation step" do
       before do
         klass.step :run_this do |state|
-          state.name = state.name + " People"
+          state.name = "#{state.name} People"
           state
         end
 
@@ -448,7 +446,7 @@ describe SmashTheState::Operation do
         end
 
         klass.step :safe, side_effect_free: true do |state|
-          state.name = state.name + " are nice"
+          state.name = "#{state.name} are nice"
           state
         end
       end
@@ -468,7 +466,7 @@ describe SmashTheState::Operation do
     context "with no validation step" do
       before do
         klass.step :run_this, side_effect_free: true do |state|
-          state.name = state.name + " People"
+          state.name = "#{state.name} People"
           state
         end
 

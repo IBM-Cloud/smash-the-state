@@ -78,12 +78,10 @@ describe SmashTheState::Operation::Sequence do
       context "without an error handler" do
         it "re-raises the Error exception" do
           expect do
-            begin
-              instance.call([])
-              raise "should not hit this"
-            rescue SmashTheState::Operation::Error => e
-              expect(e.state).to eq([:foo])
-            end
+            instance.call([])
+            raise "should not hit this"
+          rescue SmashTheState::Operation::Error => e
+            expect(e.state).to eq([:foo])
           end
         end
       end
@@ -156,16 +154,14 @@ describe SmashTheState::Operation::Sequence do
 
     context "when no step by the given name exists" do
       it "raises an exception" do
-        begin
-          instance.override_step :four do
-          end
-
-          raise "should not reach this"
-        rescue SmashTheState::Operation::Sequence::BadOverride => e
-          expect(
-            e.to_s
-          ).to eq("overriding step :four failed because it does not exist")
+        instance.override_step :four do
         end
+
+        raise "should not reach this"
+      rescue SmashTheState::Operation::Sequence::BadOverride => e
+        expect(
+          e.to_s
+        ).to eq("overriding step :four failed because it does not exist")
       end
     end
 

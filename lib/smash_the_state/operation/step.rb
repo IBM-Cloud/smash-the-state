@@ -16,10 +16,6 @@ module SmashTheState
       def side_effect_free?
         options[:side_effect_free] == true
       end
-
-      def dup
-        super
-      end
     end
   end
 end

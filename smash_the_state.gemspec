@@ -10,7 +10,8 @@ Gem::Specification.new do |s|
   s.summary     = "A useful utility for transforming state that provides step " \
                   "sequencing, middleware, and validation."
   s.description = ""
-  s.license     = "Apache-2.0"
+  s.required_ruby_version = "3.2"
+  s.license = "Apache-2.0"
 
   s.files = Dir["{lib}/**/*",
                 "spec/unit/**/*",

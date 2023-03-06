@@ -24,7 +24,7 @@ module SmashTheState
       # inheritance doesn't work with class attr_readers, this method is provided to
       # bootstrap an operation as a continuation of a "prelude" operation
       def continues_from(prelude)
-        @state_class = prelude.state_class && prelude.state_class.dup
+        @state_class = prelude.state_class&.dup
         sequence.steps.concat prelude.sequence.steps
 
         # also make the dry run sequence continue
@@ -52,7 +52,7 @@ module SmashTheState
         sequence.override_step(step_name, options, &block)
 
         # also override the dry run step
-        return if dry_run_sequence.steps_for_name(step_name).length.zero?
+        return if dry_run_sequence.steps_for_name(step_name).empty?
 
         dry_run_sequence.override_step(step_name, options, &block)
       end
@@ -122,7 +122,7 @@ module SmashTheState
         # state class can be nil if the schema is never defined. that's ok. in that
         # situation it's up to the first step to produce the original state and we'll pass
         # the params themselves in
-        state = state_class && state_class.new(params)
+        state = state_class&.new(params)
         sequence_to_run.call(state || params)
       end
     end

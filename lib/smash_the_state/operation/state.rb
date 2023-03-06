@@ -29,11 +29,11 @@ module SmashTheState
         def schema(key, options = {}, &block)
           attribute key,
                     :state_for_smashing,
-                    **(options.merge(
+                    **options.merge(
                       # allow for schemas to be provided inline *or* as a reference to a
                       # type definition
                       schema: attribute_options_to_ref_block(options) || block
-                    ))
+                    )
         end
 
         # for ActiveModel states we will treat the block as a collection of ActiveModel
@@ -69,7 +69,7 @@ module SmashTheState
 
         # if a reference to a definition is provided, use the reference schema block
         def attribute_options_to_ref_block(options)
-          options[:ref] && options[:ref].schema_block
+          options[:ref]&.schema_block
         end
 
         def invalid!(state)
