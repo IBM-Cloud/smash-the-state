@@ -1,8 +1,7 @@
 AllCops:
-  TargetRubyVersion: 2.2
-
-Rails:
-  Enabled: true
+  TargetRubyVersion: 3.2
+  # temporary disable
+  NewCops: disable
 
 Metrics/LineLength:
   Max: 100
@@ -21,7 +20,7 @@ Documentation:
 Lint/UselessAccessModifier:
   Enabled: false
 
-Layout/AlignParameters:
+Layout/ParameterAlignment:
   Enabled: false
 Layout/DotPosition:
   EnforcedStyle: trailing
@@ -36,11 +35,6 @@ Style/ClassAndModuleChildren:
   Enabled: false
 Style/StringLiterals:
   Enabled: false
-
-# Rails
-Rails/HasAndBelongsToMany:
-  Enabled: false
-
 
 # Allow safe assignment in conditions.
 Style/ParenthesesAroundCondition:

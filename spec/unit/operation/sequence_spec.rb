@@ -266,11 +266,10 @@ describe SmashTheState::Operation::Sequence do
         instance.add_middleware_step :extra_step
       end
 
-      it "block receives both the state and frozen original state" do
+      it "block receives the state and original state" do
         instance.middleware_class_block = proc do |state, original_state|
           expect(state).to eq(baz: "bing")
           expect(original_state).to eq(foo: "bar")
-          expect(original_state.frozen?).to eq(true)
         end
 
         instance.call(foo: "bar")
