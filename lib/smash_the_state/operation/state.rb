@@ -42,16 +42,24 @@ module SmashTheState
           state.tap do |s|
             # each validate block should be a "fresh start" and not interfere with the
             # previous blocks
-            s.class.clear_validators!
-            s.class.class_eval(&block)
+            s.instance_eval do
+              class_eval do
+                clear_validators!
+              end
+
+              class_eval(&block)
+            end
+
             s.validate || invalid!(s)
           end
         end
 
         def extend_validation_directives_block(state, &block)
-          state.tap do |s|
-            s.class_eval(&block)
+          state.instance_eval do
+            class_eval(&block)
           end
+
+          state
         end
 
         # for non-ActiveModel states we will just evaluate the block as a validator
