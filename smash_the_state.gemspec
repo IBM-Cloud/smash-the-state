@@ -18,6 +18,6 @@ Gem::Specification.new do |s|
                 "Rakefile",
                 "README.md"]
 
-  s.add_dependency "active_model_attributes", "~> 1.2.0"
+  s.add_dependency "active_model_attributes", "~> 1.2"
   s.add_dependency "activesupport", ">= 6.0.0"
 end
