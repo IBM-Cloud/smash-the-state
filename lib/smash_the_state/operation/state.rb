@@ -18,8 +18,8 @@ module SmashTheState
         attr_accessor :representer
 
         def build(params = nil, &block)
-          Class.new(self).tap do |k|
-            k.class_exec(params, &block)
+          Class.new(self) do
+            class_exec(params, &block)
           end
         end
 
@@ -39,25 +39,17 @@ module SmashTheState
         # for ActiveModel states we will treat the block as a collection of ActiveModel
         # validator directives
         def eval_validation_directives_block(state, &block)
-          state.tap do |s|
-            # each validate block should be a "fresh start" and not interfere with the
-            # previous blocks
-            s.instance_eval do
-              class_eval do
-                clear_validators!
-              end
+          # each validate block should be a "fresh start" and not interfere with the
+          # previous blocks
+          state.singleton_class.clear_validators!
+          state.singleton_class.class_eval(&block)
 
-              class_eval(&block)
-            end
-
-            s.validate || invalid!(s)
-          end
+          state.validate || invalid!(state)
+          state
         end
 
         def extend_validation_directives_block(state, &block)
-          state.instance_eval do
-            class_eval(&block)
-          end
+          state.class_eval(&block)
 
           state
         end
