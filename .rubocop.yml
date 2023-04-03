@@ -42,6 +42,9 @@ Style/ClassAndModuleChildren:
 Style/StringLiterals:
   Enabled: false
 
+Gemspec/RequiredRubyVersion:
+  Enabled: false
+
 # Allow safe assignment in conditions.
 Style/ParenthesesAroundCondition:
   AllowSafeAssignment: true
