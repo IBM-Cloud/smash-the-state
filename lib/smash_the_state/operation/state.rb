@@ -97,6 +97,7 @@ module SmashTheState
           indifferent_whitelisted_attributes.key? attribute
         end
 
+        return whitelisted_attributes.map { |a| super(a) } if whitelisted_attributes.is_a? Array
         super(whitelisted_attributes)
       end
 
