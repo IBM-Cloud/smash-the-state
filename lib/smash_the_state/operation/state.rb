@@ -18,8 +18,8 @@ module SmashTheState
         attr_accessor :representer
 
         def build(params = nil, &block)
-          Class.new(self).tap do |k|
-            k.class_exec(params, &block)
+          Class.new(self) do
+            class_exec(params, &block)
           end
         end
 
@@ -29,7 +29,7 @@ module SmashTheState
         def schema(key, options = {}, &block)
           attribute key,
                     :state_for_smashing,
-                    options.merge(
+                    **options.merge(
                       # allow for schemas to be provided inline *or* as a reference to a
                       # type definition
                       schema: attribute_options_to_ref_block(options) || block
@@ -39,19 +39,19 @@ module SmashTheState
         # for ActiveModel states we will treat the block as a collection of ActiveModel
         # validator directives
         def eval_validation_directives_block(state, &block)
-          state.tap do |s|
-            # each validate block should be a "fresh start" and not interfere with the
-            # previous blocks
-            s.class.clear_validators!
-            s.class_eval(&block)
-            s.validate || invalid!(s)
-          end
+          # each validate block should be a "fresh start" and not interfere with the
+          # previous blocks
+          state.singleton_class.clear_validators!
+          state.singleton_class.class_eval(&block)
+
+          state.validate || invalid!(state)
+          state
         end
 
         def extend_validation_directives_block(state, &block)
-          state.tap do |s|
-            s.class_eval(&block)
-          end
+          state.class_eval(&block)
+
+          state
         end
 
         # for non-ActiveModel states we will just evaluate the block as a validator
@@ -69,7 +69,7 @@ module SmashTheState
 
         # if a reference to a definition is provided, use the reference schema block
         def attribute_options_to_ref_block(options)
-          options[:ref] && options[:ref].schema_block
+          options[:ref]&.schema_block
         end
 
         def invalid!(state)
