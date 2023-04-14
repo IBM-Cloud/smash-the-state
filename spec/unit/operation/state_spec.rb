@@ -40,6 +40,10 @@ describe SmashTheState::Operation::State do
 
           # by reference
           schema :jam, ref: jam_definition
+
+          schema :ingredients, array: true do
+            attribute :kind, :string
+          end
         end
       end
     end
@@ -53,7 +57,11 @@ describe SmashTheState::Operation::State do
           },
           jam: {
             sweetened: false
-          }
+          },
+          ingredients: [
+            { kind: "bran" },
+            { kind: "wallnuts" }
+          ]
         }
       )
     end
@@ -65,6 +73,13 @@ describe SmashTheState::Operation::State do
 
     it "allows for reference of type definitions" do
       expect(instance.bread.jam.sweetened).to eq(false)
+    end
+
+    context "array support" do
+      it "allows arrays" do
+        expect(instance.bread.ingredients).to be_a Array
+        expect(instance.bread.ingredients.map(&:kind)).to eq(["bran", "wallnuts"])
+      end
     end
   end
 
