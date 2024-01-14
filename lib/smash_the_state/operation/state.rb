@@ -6,6 +6,8 @@ module SmashTheState
       include ActiveModel::Model
       include ActiveModelAttributes
 
+      DEFAULT_MODEL_NAME = "State".freeze
+
       class Invalid < StandardError
         attr_reader :state
 
@@ -61,8 +63,9 @@ module SmashTheState
           state
         end
 
-        def model_name
-          ActiveModel::Name.new(self, nil, "State")
+        def model_name(model_name = nil)
+          @_model_name = model_name if model_name.present?
+          ActiveModel::Name.new(self, nil, @_model_name || DEFAULT_MODEL_NAME)
         end
 
         private
