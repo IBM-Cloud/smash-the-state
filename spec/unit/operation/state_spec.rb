@@ -138,4 +138,28 @@ describe SmashTheState::Operation::State do
       end
     end
   end
+
+  describe "self#model_name" do
+    context "when provided with a model name" do
+      let!(:built) do
+        subject.build do
+          model_name "Foo"
+        end
+      end
+
+      it "uses the provided model name" do
+        expect(built.model_name.to_s).to eq("Foo")
+      end
+    end
+
+    context "when not provided a model name" do
+      let!(:built) do
+        subject.build {}
+      end
+
+      it "uses the default model name of 'State'" do
+        expect(built.model_name.to_s).to eq("State")
+      end
+    end
+  end
 end
